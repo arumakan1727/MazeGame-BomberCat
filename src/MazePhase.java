@@ -8,9 +8,9 @@ import java.util.EnumMap;
 public class MazePhase implements Phase {
     private MapGameScene scene;
 
-    private MapData mapData;
-    private MapView mapView;
-    private MoveChara player;
+    private final MapData mapData;
+    private final MapView mapView;
+    private final MoveChara player;
 
     public MazePhase() {
         this.mapData = new MapData(21, 15);
