@@ -1,10 +1,13 @@
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
 import java.util.EnumMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MazePhase implements Phase {
     private MapGameScene scene;
@@ -13,12 +16,26 @@ public class MazePhase implements Phase {
     private final MapView mapView;
     private final MoveChara player;
 
+    private final AudioClip bgm;
+    private final AudioClip coinSE;
+    private final AudioClip keySE;
+    private final AudioClip goalSE;
+
     private int score = 0;
+    private boolean isPlayerControllable = true;
 
     public MazePhase() {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
+
+        this.bgm = new AudioClip(getClass().getResource("sound/bgm_maoudamashii_8bit18.mp3").toString());
+        this.bgm.setVolume(0.3);
+        this.bgm.setCycleCount(AudioClip.INDEFINITE);
+
+        this.coinSE = new AudioClip(getClass().getResource("sound/coin1.wav").toString());
+        this.keySE = new AudioClip(getClass().getResource("sound/se_maoudamashii_system46.mp3").toString());
+        this.goalSE = new AudioClip(getClass().getResource("sound/goal.wav").toString());
 
         this.mapView.setMapTopY(40);
     }
@@ -27,6 +44,7 @@ public class MazePhase implements Phase {
     public void setup(MapGameScene scene) {
         this.scene = scene;
         this.scene.setOnKeyPressed(this::keyPressedAction);
+        this.bgm.play();
     }
 
     @Override
@@ -55,6 +73,10 @@ public class MazePhase implements Phase {
 
     // Get users key actions
     public void keyPressedAction(KeyEvent event) {
+        if (!isPlayerControllable) {
+            return;
+        }
+
         KeyCode key = event.getCode();
         if (key == KeyCode.H || key == KeyCode.LEFT) {
             leftButtonAction();
@@ -81,8 +103,16 @@ public class MazePhase implements Phase {
     }
 
     public void itemGetAction(int col, int row) {
-        this.score += this.mapData.getItemType(col, row).getScore();
+        final ItemType itemType = this.mapData.getItemType(col, row);
+        this.score += itemType.getScore();
         this.mapData.setItemType(col, row, ItemType.NONE);
+
+        if (itemType == ItemType.COIN) {
+            this.coinSE.play();
+        } else if (itemType == ItemType.KEY) {
+            this.keySE.play();
+        }
+
 
         if (mapData.countExistingKeys() <= 0) {
             this.mapData.setGoalOpen(true);
@@ -91,7 +121,18 @@ public class MazePhase implements Phase {
 
     public void goalAction() {
         System.out.println("Goal!!!!!!!!!!!!!!!!!");
-        createAndGotoNextMaze();
+        this.isPlayerControllable = false;
+        this.bgm.stop();
+        this.goalSE.play();
+
+        TimerTask gotoNextMazeTask = new TimerTask() {
+            @Override
+            public void run() {
+                createAndGotoNextMaze();
+            }
+        };
+
+        new Timer().schedule(gotoNextMazeTask, 2000);
     }
 
     private void drawScore(GraphicsContext gc) {
