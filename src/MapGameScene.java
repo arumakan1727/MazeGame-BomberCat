@@ -4,6 +4,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 
 public class MapGameScene extends Scene {
     private static final int WIDTH = 860;
@@ -35,6 +36,8 @@ public class MapGameScene extends Scene {
             @Override
             public void handle(long curTime) {
                 phase.update(curTime);
+                gc.setFill(Color.WHITESMOKE);
+                gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
                 phase.draw(gc);
             }
         };
