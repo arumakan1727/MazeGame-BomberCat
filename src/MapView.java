@@ -25,6 +25,24 @@ public class MapView {
         this.drawItems(gc);
     }
 
+    /**
+     * マップの横の幅のピクセル数を返す。
+     *
+     * @return マップの横の幅のピクセル数
+     */
+    public int getMapWidth() {
+        return this.cellSize * this.mapData.getWidth();
+    }
+
+    /**
+     * マップの縦の高さのピクセル数を返す。
+     *
+     * @return マップの縦の高さのピクセル数
+     */
+    public int getMapHeight() {
+        return this.cellSize * this.mapData.getHeight();
+    }
+
     private void drawCells(GraphicsContext gc) {
         final int nrow = this.mapData.getHeight();
         final int ncol = this.mapData.getWidth();
@@ -67,7 +85,7 @@ public class MapView {
                     final int y = this.getCellDrawY(row);
                     this.doorKeyView.draw(gc, x, y, this.cellSize, this.cellSize);
                 } else if (itemType == ItemType.COIN) {
-                    final int coinSize = (int)(this.cellSize * 0.7);
+                    final int coinSize = (int) (this.cellSize * 0.7);
                     final int offset = (this.cellSize - coinSize) / 2;
                     final int x = this.getCellDrawX(col) + offset;
                     final int y = this.getCellDrawY(row) + offset;
