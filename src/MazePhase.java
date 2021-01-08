@@ -1,4 +1,3 @@
-import javafx.event.ActionEvent;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -99,9 +98,5 @@ public class MazePhase implements Phase {
     public void rightButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
         player.moveBy(1, 0);
-    }
-
-    public void func1ButtonAction(ActionEvent event) {
-        System.out.println("func1: Nothing to do");
     }
 }
