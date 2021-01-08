@@ -36,12 +36,7 @@ public class MazePhase implements Phase {
     @Override
     public void draw(GraphicsContext gc) {
         mapView.draw(gc);
-
-        // Todo draw item
-
         player.draw(gc, mapView);
-
-        // Todo draw Effect
     }
 
     private static MapSkin createDefaultMapSkin() {
@@ -64,9 +59,15 @@ public class MazePhase implements Phase {
             rightButtonAction();
         }
 
-        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
         final int playerCol = player.getPosCol();
         final int playerRow = player.getPosRow();
+
+        // ゴール扉が開いている状態でゴールマスに重なったらゴール処理
+        if (mapData.isGoalOpen() && playerCol == mapData.getGoalX() && playerRow == mapData.getGoalY()) {
+            goalAction();
+        }
+
+        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
         if (mapData.getItemType(playerCol, playerRow) != ItemType.NONE) {
             itemGetAction(playerCol, playerRow);
         }
@@ -74,6 +75,14 @@ public class MazePhase implements Phase {
 
     public void itemGetAction(int col, int row) {
         this.mapData.setItemType(col, row, ItemType.NONE);
+
+        if (mapData.countExistingKeys() <= 0) {
+            this.mapData.setGoalOpen(true);
+        }
+    }
+
+    public void goalAction() {
+        System.out.println("Goal!!!!!!!!!!!!!!!!!");
     }
 
     // Operations for going the cat down
