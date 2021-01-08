@@ -64,6 +64,17 @@ public class MazePhase implements Phase {
         } else if (key == KeyCode.L || key == KeyCode.RIGHT) {
             rightButtonAction();
         }
+
+        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
+        final int playerCol = player.getPosCol();
+        final int playerRow = player.getPosRow();
+        if (mapData.getItemType(playerCol, playerRow) != ItemType.NONE) {
+            itemGetAction(playerCol, playerRow);
+        }
+    }
+
+    public void itemGetAction(int col, int row) {
+        this.mapData.setItemType(col, row, ItemType.NONE);
     }
 
     // Operations for going the cat down

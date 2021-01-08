@@ -224,9 +224,16 @@ public class MapData {
         }
     }
 
-    private <T> T randomChoice(List<T> list) {
-        final int i = (int) (Math.random() * list.size());
-        return list.get(i);
+    public int countExistingKeys() {
+        int count = 0;
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                if (getItemType(x, y) == ItemType.KEY) {
+                    ++count;
+                }
+            }
+        }
+        return count;
     }
 
     /**
@@ -264,6 +271,16 @@ public class MapData {
         return this.listUpSpaceCellPositions(0, width, 0, height);
     }
 
+    /**
+     * リストの要素をランダムに一つ選んで返す。
+     * @param list リスト
+     * @param <T> リストの要素の型
+     * @return ランダムに抽出されたリストの要素
+     */
+    private static <T> T randomChoice(List<T> list) {
+        final int i = (int) (Math.random() * list.size());
+        return list.get(i);
+    }
 }
 
 final class Pos {
