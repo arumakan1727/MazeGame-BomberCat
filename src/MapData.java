@@ -20,6 +20,10 @@ public class MapData {
     private final int playerStartX = 1;
     private final int playerStartY = 1;
 
+    private int goalX;
+    private int goalY;
+    private boolean isGoalOpen = false;
+
     /**
      * 縦 height マス、横 width マスからなるマップデータを生成し、迷路を構築する。
      *
@@ -34,6 +38,8 @@ public class MapData {
 
         this.fillMap(CellType.WALL);
         this.digMap(1, 3);
+
+        this.placeGoal();
 
         this.clearItem();
         this.placeKeys();
@@ -64,6 +70,22 @@ public class MapData {
 
     public int getPlayerStartY() {
         return playerStartY;
+    }
+
+    public int getGoalX() {
+        return goalX;
+    }
+
+    public int getGoalY() {
+        return goalY;
+    }
+
+    public boolean isGoalOpen() {
+        return isGoalOpen;
+    }
+
+    public void setGoalOpen(boolean goalOpen) {
+        isGoalOpen = goalOpen;
     }
 
     /**
@@ -234,6 +256,40 @@ public class MapData {
             }
         }
         return count;
+    }
+
+    /**
+     * TODO 必須2 ゴールの配置
+     */
+    public void placeGoal() {
+        // ゴール位置の候補。要素を追加して長さを自由に変えられる配列。
+        List<Pos> goalCandidates = new ArrayList<>();
+
+        // 外周は候補の探索に含めないので 0 <= y < height ではなく 1 <= y < height - 1。 x も同様。
+        for (int y = 1; y < height - 1; y++) {
+            for (int x = 1; x < width - 1; x++) {
+
+                // 今観ているマスが壁ならば、ゴールを配置できないのでスキップ
+                if (getCellType(x, y) != CellType.SPACE) continue;
+
+                // 上下左右の壁の数を数える。
+                int wallCount = 0;
+                if (getCellType(x + 1, y) == CellType.WALL) wallCount++;
+                if (getCellType(x - 1, y) == CellType.WALL) wallCount++;
+                if (getCellType(x, y + 1) == CellType.WALL) wallCount++;
+                if (getCellType(x, y - 1) == CellType.WALL) wallCount++;
+
+                // 周囲がコの字に壁で囲まれているならゴール候補に追加
+                if (wallCount == 3) {
+                    goalCandidates.add(new Pos(x, y));
+                }
+            }
+        }
+
+        // ゴール候補リストの中からランダムに一つ選んでゴール位置として設定
+        final Pos goalPos = randomChoice(goalCandidates);
+        this.goalX = goalPos.col;
+        this.goalY = goalPos.row;
     }
 
     /**

@@ -1,4 +1,5 @@
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 
 public class MapView {
     private MapData mapData;
@@ -9,6 +10,8 @@ public class MapView {
 
     private final DoorKeyView doorKeyView = new DoorKeyView();
     private final CoinView coinView = new CoinView();
+    private final Image closedGoalImage = new Image("png/door-close-32x32.png");
+    private final Image openedGoalImage = new Image("png/door-open-32x32.png");
 
     public MapView(MapData mapData, int cellSize, MapSkin mapSkin) {
         this.mapData = mapData;
@@ -18,6 +21,7 @@ public class MapView {
 
     public void draw(GraphicsContext gc) {
         this.drawCells(gc);
+        this.drawGoal(gc);
         this.drawItems(gc);
     }
 
@@ -34,6 +38,19 @@ public class MapView {
                 final int y = this.getCellDrawY(row);
                 gc.drawImage(cellImage, x, y, this.cellSize, this.cellSize);
             }
+        }
+    }
+
+    private void drawGoal(GraphicsContext gc) {
+        final int goalCol = mapData.getGoalX();
+        final int goalRow = mapData.getGoalY();
+        final int x = this.getCellDrawX(goalCol);
+        final int y = this.getCellDrawY(goalRow);
+
+        if (mapData.isGoalOpen()) {
+            gc.drawImage(openedGoalImage, x, y, this.cellSize, this.cellSize);
+        } else {
+            gc.drawImage(closedGoalImage, x, y, this.cellSize, this.cellSize);
         }
     }
 
