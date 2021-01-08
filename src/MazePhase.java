@@ -15,7 +15,7 @@ public class MazePhase implements Phase {
     public MazePhase() {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
-        this.player = new MoveChara(1, 1, mapData);
+        this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
     }
 
     @Override

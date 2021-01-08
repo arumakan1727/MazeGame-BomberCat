@@ -1,29 +1,43 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 /**
  * グリッド状マップのデータを保持するクラス。
- *
+ * <p>
  * 各マスはセルとも呼ぶことにする。
  * また、左から x マス目、上から y マス目のセルを セル(x, y) と表すことにする。
- *
+ * <p>
  * x, y は 0 から始まる (0-indexed)。
  */
 public class MapData {
     private final CellType[][] cellTypeGrid;
+    private final ItemType[][] itemTypeGrid;
     private final int width;
     private final int height;
+    private final int playerStartX = 1;
+    private final int playerStartY = 1;
 
     /**
      * 縦 height マス、横 width マスからなるマップデータを生成し、迷路を構築する。
      *
-     * @param width マップの列数
+     * @param width  マップの列数
      * @param height マップの行数
      */
     public MapData(int width, int height) {
         this.width = width;
         this.height = height;
         this.cellTypeGrid = new CellType[height][width];
+        this.itemTypeGrid = new ItemType[height][width];
 
         this.fillMap(CellType.WALL);
         this.digMap(1, 3);
+
+        this.clearItem();
+        this.placeKeys();
+        this.placeCoins(12);
     }
 
     /**
@@ -44,6 +58,14 @@ public class MapData {
         return width;
     }
 
+    public int getPlayerStartX() {
+        return playerStartX;
+    }
+
+    public int getPlayerStartY() {
+        return playerStartY;
+    }
+
     /**
      * セル(x, y) の種類を返す。
      * x, y は 0-indexed。
@@ -51,7 +73,6 @@ public class MapData {
      *
      * @param x 取得するセルの列番号
      * @param y 取得するセルの行番号
-     *
      * @return x列y行目のセルの種類
      */
     public CellType getCellType(int x, int y) {
@@ -66,8 +87,8 @@ public class MapData {
      * x, y は 0-indexed。
      * 指定したマスの位置がマップの範囲を超える場合は例外を投げずに何もしない。
      *
-     * @param x 設定するセルの列番号
-     * @param y 設定するセルの行番号
+     * @param x        設定するセルの列番号
+     * @param y        設定するセルの行番号
      * @param cellType 設定するセルの種類
      */
     public void setCellType(int x, int y, CellType cellType) {
@@ -75,6 +96,31 @@ public class MapData {
             return;
         }
         cellTypeGrid[y][x] = cellType;
+    }
+
+    /**
+     * セル(x, y) のアイテムの種類を返す。
+     * x, y は 0-indexed。
+     * (x, y) にアイテムがない場合は {@link ItemType#NONE} を返す。
+     *
+     * @param x 取得するアイテムの列番号
+     * @param y 取得するアイテムの行番号
+     * @return x列y行目のアイテムの種類
+     */
+    public ItemType getItemType(int x, int y) {
+        return itemTypeGrid[y][x];
+    }
+
+    /**
+     * セル(x, y) のアイテムの種類を設定する。
+     * x, y は 0-indexed。
+     *
+     * @param x        設定するアイテムの列番号
+     * @param y        設定するアイテムの行番号
+     * @param itemType 設定するアイテムの種類
+     */
+    public void setItemType(int x, int y, ItemType itemType) {
+        itemTypeGrid[y][x] = itemType;
     }
 
     /**
@@ -86,6 +132,17 @@ public class MapData {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 cellTypeGrid[y][x] = fillValue;
+            }
+        }
+    }
+
+    /**
+     * マップ上のアイテムを空にする。
+     */
+    public void clearItem() {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                itemTypeGrid[y][x] = ItemType.NONE;
             }
         }
     }
@@ -118,5 +175,121 @@ public class MapData {
                 digMap(x + dx * 2, y + dy * 2);
             }
         }
+    }
+
+    public void placeKeys() {
+        final int midX = this.width / 2;
+        final int midY = this.height / 2;
+
+        // 右上のエリアにキーを一つランダムに配置
+        {
+            final List<Pos> poses =
+                    this.listUpSpaceCellPositions(midX + 1, width, 0, midY - 1);
+            final Pos p = randomChoice(poses);
+            this.setItemType(p.col, p.row, ItemType.KEY);
+        }
+
+        // 右下のエリアにキーを一つランダムに配置
+        {
+            final List<Pos> poses =
+                    this.listUpSpaceCellPositions(midX + 1, width, midY + 1, height);
+            final Pos p = randomChoice(poses);
+            this.setItemType(p.col, p.row, ItemType.KEY);
+        }
+
+        // 左のエリアにキーを一つランダムに配置
+        {
+            final List<Pos> poses =
+                    this.listUpSpaceCellPositions(0, midX - 1, midY + 1, height);
+            final Pos p = randomChoice(poses);
+            this.setItemType(p.col, p.row, ItemType.KEY);
+        }
+    }
+
+    public void placeCoins(int coinNum) {
+        final List<Pos> freeCells =
+                this.listUpSpaceCellPositions().stream()
+                        .filter(p ->
+                                (getItemType(p.col, p.row) == ItemType.NONE)
+                                        && p.col != playerStartX
+                                        && p.row != playerStartY
+                        )
+                        .collect(Collectors.toList());
+
+        Collections.shuffle(freeCells);
+
+        for (int i = 0; i < coinNum; ++i) {
+            final Pos p = freeCells.get(i);
+            this.setItemType(p.col, p.row, ItemType.COIN);
+        }
+    }
+
+    private <T> T randomChoice(List<T> list) {
+        final int i = (int) (Math.random() * list.size());
+        return list.get(i);
+    }
+
+    /**
+     * 列番号が x が (minX <= x < maxX) かつ 行番号 y が (minY <= y < maxY)
+     * を満たすような全てのセルの位置 (x, y) をリストアップして返す。
+     * 下限は範囲内に含むが、上限は範囲内に含めない (すなわち、範囲は半開区間)。
+     *
+     * @param minX 列番号の下限
+     * @param maxX 列番号の上限
+     * @param minY 行番号の下限
+     * @param maxY 行番号の上限
+     * @return x ∈ [minX, maxX) かつ
+     * y ∈ [minY, maxY) かつ
+     * (x,y) が空白マス
+     * であるような全てのセルの位置 (x, y) を集めたリスト。
+     */
+    public List<Pos> listUpSpaceCellPositions(int minX, int maxX, int minY, int maxY) {
+        ArrayList<Pos> spaceCells = new ArrayList<>(height * width);
+        for (int y = minY; y < maxY; ++y) {
+            for (int x = minX; x < maxX; ++x) {
+                if (this.cellTypeGrid[y][x] == CellType.SPACE) {
+                    spaceCells.add(new Pos(x, y));
+                }
+            }
+        }
+        return spaceCells;
+    }
+
+    /**
+     * エリア内の全てのマスのうち空白マスの位置をリストに集めて返す。
+     *
+     * @return (x, y) が空白マスであるような全てのセルの位置 (x, y) を集めたリスト。
+     */
+    public List<Pos> listUpSpaceCellPositions() {
+        return this.listUpSpaceCellPositions(0, width, 0, height);
+    }
+
+}
+
+final class Pos {
+    public final int row;
+    public final int col;
+
+    public Pos(int col, int row) {
+        this.col = col;
+        this.row = row;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(row, col);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pos pos = (Pos) o;
+        return row == pos.row && col == pos.col;
+    }
+
+    @Override
+    public String toString() {
+        return "Pos(row=" + row + ", col=" + col + ")";
     }
 }
