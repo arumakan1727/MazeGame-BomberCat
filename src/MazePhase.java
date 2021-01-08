@@ -55,7 +55,6 @@ public class MazePhase implements Phase {
     // Get users key actions
     public void keyPressedAction(KeyEvent event) {
         KeyCode key = event.getCode();
-        System.out.println("keycode:" + key);
         if (key == KeyCode.H || key == KeyCode.LEFT) {
             leftButtonAction();
         } else if (key == KeyCode.J || key == KeyCode.DOWN) {
@@ -69,28 +68,24 @@ public class MazePhase implements Phase {
 
     // Operations for going the cat down
     public void upButtonAction() {
-        printAction("UP");
         player.setCharaDirection(MoveChara.TYPE_UP);
         player.moveBy(0, -1);
     }
 
     // Operations for going the cat down
     public void downButtonAction() {
-        printAction("DOWN");
         player.setCharaDirection(MoveChara.TYPE_DOWN);
         player.moveBy(0, 1);
     }
 
     // Operations for going the cat right
     public void leftButtonAction() {
-        printAction("LEFT");
         player.setCharaDirection(MoveChara.TYPE_LEFT);
         player.moveBy(-1, 0);
     }
 
     // Operations for going the cat right
     public void rightButtonAction() {
-        printAction("RIGHT");
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
         player.moveBy(1, 0);
     }
@@ -98,10 +93,4 @@ public class MazePhase implements Phase {
     public void func1ButtonAction(ActionEvent event) {
         System.out.println("func1: Nothing to do");
     }
-
-    // Print actions of user inputs
-    public void printAction(String actionString) {
-        System.out.println("Action: " + actionString);
-    }
-
 }
