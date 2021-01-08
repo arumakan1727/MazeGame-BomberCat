@@ -1,6 +1,8 @@
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 import java.util.EnumMap;
 
@@ -11,10 +13,14 @@ public class MazePhase implements Phase {
     private final MapView mapView;
     private final MoveChara player;
 
+    private int score = 0;
+
     public MazePhase() {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
+
+        this.mapView.setMapTopY(40);
     }
 
     @Override
@@ -37,6 +43,7 @@ public class MazePhase implements Phase {
     public void draw(GraphicsContext gc) {
         mapView.draw(gc);
         player.draw(gc, mapView);
+        this.drawScore(gc);
     }
 
     private static MapSkin createDefaultMapSkin() {
@@ -74,6 +81,7 @@ public class MazePhase implements Phase {
     }
 
     public void itemGetAction(int col, int row) {
+        this.score += this.mapData.getItemType(col, row).getScore();
         this.mapData.setItemType(col, row, ItemType.NONE);
 
         if (mapData.countExistingKeys() <= 0) {
@@ -84,6 +92,14 @@ public class MazePhase implements Phase {
     public void goalAction() {
         System.out.println("Goal!!!!!!!!!!!!!!!!!");
         createAndGotoNextMaze();
+    }
+
+    private void drawScore(GraphicsContext gc) {
+        gc.setFont(new Font("monospace", 16));
+        gc.setFill(Color.DIMGRAY);
+        final int x = 10;
+        final int y = 30;
+        gc.fillText("Score: " + this.score, x, y);
     }
 
     /**
