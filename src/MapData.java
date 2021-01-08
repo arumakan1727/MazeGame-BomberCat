@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 /**
  * グリッド状マップのデータを保持するクラス。
@@ -199,6 +199,25 @@ public class MapData {
         }
     }
 
+    /**
+     * セル(col, row) が、空白マスかつスタート位置でもなくゴール位置でもなくアイテムも配置されていないなら true を返す。
+     * そうでなければ false を返す。
+     *
+     * @param col 列番号
+     * @param row 行番号
+     * @return セル(col, row) が、スタート位置でもなくゴール位置でもなくアイテムが配置されていないなら true を返す。
+     */
+    private boolean isEmptyPos(int col, int row) {
+        return getCellType(col, row) == CellType.SPACE
+                && (col != getGoalX() && row != getGoalY())
+                && (col != getPlayerStartX() && row != getPlayerStartY())
+                && getItemType(col, row) == ItemType.NONE;
+    }
+
+    private boolean isEmptyPos(Pos pos) {
+        return isEmptyPos(pos.col, pos.row);
+    }
+
     public void placeKeys() {
         final int midX = this.width / 2;
         final int midY = this.height / 2;
@@ -206,7 +225,7 @@ public class MapData {
         // 右上のエリアにキーを一つランダムに配置
         {
             final List<Pos> poses =
-                    this.listUpSpaceCellPositions(midX + 1, width, 0, midY - 1);
+                    this.listUpCellPositions(midX + 1, width, 0, midY - 1, this::isEmptyPos);
             final Pos p = randomChoice(poses);
             this.setItemType(p.col, p.row, ItemType.KEY);
         }
@@ -214,7 +233,7 @@ public class MapData {
         // 右下のエリアにキーを一つランダムに配置
         {
             final List<Pos> poses =
-                    this.listUpSpaceCellPositions(midX + 1, width, midY + 1, height);
+                    this.listUpCellPositions(midX + 1, width, midY + 1, height, this::isEmptyPos);
             final Pos p = randomChoice(poses);
             this.setItemType(p.col, p.row, ItemType.KEY);
         }
@@ -222,22 +241,14 @@ public class MapData {
         // 左のエリアにキーを一つランダムに配置
         {
             final List<Pos> poses =
-                    this.listUpSpaceCellPositions(0, midX - 1, midY + 1, height);
+                    this.listUpCellPositions(0, midX - 1, midY + 1, height, this::isEmptyPos);
             final Pos p = randomChoice(poses);
             this.setItemType(p.col, p.row, ItemType.KEY);
         }
     }
 
     public void placeCoins(int coinNum) {
-        final List<Pos> freeCells =
-                this.listUpSpaceCellPositions().stream()
-                        .filter(p ->
-                                (getItemType(p.col, p.row) == ItemType.NONE)
-                                        && p.col != playerStartX
-                                        && p.row != playerStartY
-                        )
-                        .collect(Collectors.toList());
-
+        final List<Pos> freeCells = this.listUpCellPositions(this::isEmptyPos);
         Collections.shuffle(freeCells);
 
         for (int i = 0; i < coinNum; ++i) {
@@ -294,23 +305,24 @@ public class MapData {
 
     /**
      * 列番号が x が (minX <= x < maxX) かつ 行番号 y が (minY <= y < maxY)
-     * を満たすような全てのセルの位置 (x, y) をリストアップして返す。
+     * の範囲内のセルのうち、posPredicate(new Pos(x, y)) が true になるマスをリストアップして返す。
      * 下限は範囲内に含むが、上限は範囲内に含めない (すなわち、範囲は半開区間)。
      *
-     * @param minX 列番号の下限
-     * @param maxX 列番号の上限
-     * @param minY 行番号の下限
-     * @param maxY 行番号の上限
+     * @param minX         列番号の下限
+     * @param maxX         列番号の上限
+     * @param minY         行番号の下限
+     * @param maxY         行番号の上限
+     * @param posPredicate リストアップするセル位置の条件を表す述語関数オブジェクト。
      * @return x ∈ [minX, maxX) かつ
      * y ∈ [minY, maxY) かつ
      * (x,y) が空白マス
      * であるような全てのセルの位置 (x, y) を集めたリスト。
      */
-    public List<Pos> listUpSpaceCellPositions(int minX, int maxX, int minY, int maxY) {
+    public List<Pos> listUpCellPositions(int minX, int maxX, int minY, int maxY, Predicate<Pos> posPredicate) {
         ArrayList<Pos> spaceCells = new ArrayList<>(height * width);
         for (int y = minY; y < maxY; ++y) {
             for (int x = minX; x < maxX; ++x) {
-                if (this.cellTypeGrid[y][x] == CellType.SPACE) {
+                if (posPredicate.test(new Pos(x, y))) {
                     spaceCells.add(new Pos(x, y));
                 }
             }
@@ -319,18 +331,20 @@ public class MapData {
     }
 
     /**
-     * エリア内の全てのマスのうち空白マスの位置をリストに集めて返す。
+     * エリア内の全てのマスのうち条件を満たすセル位置をリストアップして返す。
      *
+     * @param posPredicate リストアップするセル位置の条件を表す述語関数オブジェクト。
      * @return (x, y) が空白マスであるような全てのセルの位置 (x, y) を集めたリスト。
      */
-    public List<Pos> listUpSpaceCellPositions() {
-        return this.listUpSpaceCellPositions(0, width, 0, height);
+    public List<Pos> listUpCellPositions(Predicate<Pos> posPredicate) {
+        return this.listUpCellPositions(0, width, 0, height, posPredicate);
     }
 
     /**
      * リストの要素をランダムに一つ選んで返す。
+     *
      * @param list リスト
-     * @param <T> リストの要素の型
+     * @param <T>  リストの要素の型
      * @return ランダムに抽出されたリストの要素
      */
     private static <T> T randomChoice(List<T> list) {
