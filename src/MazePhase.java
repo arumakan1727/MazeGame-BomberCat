@@ -83,6 +83,15 @@ public class MazePhase implements Phase {
 
     public void goalAction() {
         System.out.println("Goal!!!!!!!!!!!!!!!!!");
+        createAndGotoNextMaze();
+    }
+
+    /**
+     * TODO 必須3 次のマップへ遷移
+     */
+    public void createAndGotoNextMaze() {
+        Phase nextPhase = new MazePhase();
+        this.scene.changePhase(nextPhase);
     }
 
     // Operations for going the cat down
