@@ -25,7 +25,7 @@ public class MazePhase implements Phase {
 
     @Override
     public void tearDown() {
-
+        this.scene.setOnKeyPressed(null);
     }
 
     @Override
