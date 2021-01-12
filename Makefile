@@ -5,9 +5,9 @@ ASSETS_DIR    := assets
 JAVA_SOURCES  := $(wildcard ${SRC_DIR}/*.java)
 CLASS_FILES   := $(subst ${SRC_DIR}/,${OUT_DIR}/, $(JAVA_SOURCES:.java=.class))
 
-JFX_LIB       ?= /usr/share/openjfx/lib
-MODULE_FLAGS  := --module-path ${JFX_LIB} --add-modules javafx.controls,javafx.fxml,javafx.media
-JAVAC_FLAGS   := -Xlint:all -g ${MODULE_FLAGS}
+JFX_LIB                    ?= /usr/share/openjfx/lib
+MAP_GAME_JAVA_MODULE_OPTS  ?= --module-path ${JFX_LIB} --add-modules javafx.controls,javafx.fxml,javafx.media
+JAVAC_FLAGS                := -Xlint:all -g ${MAP_GAME_JAVA_MODULE_OPTS}
 
 
 all:	out_dir compile_all
