@@ -14,7 +14,7 @@ all:	out_dir compile_all
 
 
 run:	all
-	java -classpath ${OUT_DIR} ${MODULE_FLAGS} ${MAIN_CLASS}
+	java -classpath ${OUT_DIR} ${MAP_GAME_JAVA_MODULE_OPTS} ${MAIN_CLASS}
 
 
 compile_all:	${CLASS_FILES}
