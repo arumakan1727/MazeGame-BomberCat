@@ -31,13 +31,13 @@ public class MazePhase implements Phase {
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
 
-        this.bgm = new AudioClip(getClass().getResource("sound/bgm_maoudamashii_8bit18.mp3").toString());
+        this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
         this.bgm.setVolume(0.3);
         this.bgm.setCycleCount(AudioClip.INDEFINITE);
 
-        this.coinSE = new AudioClip(getClass().getResource("sound/coin1.wav").toString());
-        this.keySE = new AudioClip(getClass().getResource("sound/se_maoudamashii_system46.mp3").toString());
-        this.goalSE = new AudioClip(getClass().getResource("sound/goal.wav").toString());
+        this.coinSE = new AudioClip(MapGame.getResourceAsString("sound/coin1.wav"));
+        this.keySE = new AudioClip(MapGame.getResourceAsString("sound/se_maoudamashii_system46.mp3"));
+        this.goalSE = new AudioClip(MapGame.getResourceAsString("sound/goal.wav"));
 
         this.mapView.setMapTopY(40);
 
