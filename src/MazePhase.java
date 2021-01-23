@@ -5,9 +5,8 @@ import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-import java.util.EnumMap;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+import java.util.function.Predicate;
 
 public class MazePhase implements Phase {
     private MapGameScene scene;
@@ -110,6 +109,9 @@ public class MazePhase implements Phase {
                 break;
             case SPACE:
                 spaceButtonAction();
+                break;
+            case F:
+                putCoinTrailToGoal();
         }
     }
 
@@ -224,5 +226,92 @@ public class MazePhase implements Phase {
             return;
         }
         bombExecutor.registerNewBomb(player.getPosCol(), player.getPosRow());
+    }
+
+    public void putCoinTrailToGoal() {
+        final List<Pos> path = calcShortestPath(
+                this.player.getPos(), this.mapData.getGoalPos(),
+                mapData.getWidth(), mapData.getHeight(),
+                pos -> mapData.getCellType(pos.col, pos.row).isMovable());
+
+        Timer timer = new Timer();
+
+        final AudioClip coinPutSE = new AudioClip(MapGame.getResourceAsString("sound/coin8.wav"));
+
+        int i = 0;
+        for (Pos pos : path) {
+            if (mapData.getItemType(pos.col, pos.row) != ItemType.NONE) continue;
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    mapData.setItemType(pos.col, pos.row, ItemType.COIN);
+                    coinPutSE.play();
+                }
+            }, i * 80);
+            ++i;
+        }
+    }
+
+    /**
+     * start から goal までの最短ルートを List として返す。
+     * List の先頭要素は start で、末尾要素は goal である。
+     * 最短ルートが複数ある場合は、そのうちのどれが選ばれるかは実装依存である。
+     *
+     * @param start      スタートマスの位置
+     * @param goal       ゴールマスの位置
+     * @param canBeTrail 指定したマスが道になれる (=プレイヤーが通過できる) なら true を返す述語関数
+     * @return start から goal までの最短ルート
+     */
+    public static List<Pos> calcShortestPath(Pos start, Pos goal, int ncol, int nrow, Predicate<Pos> canBeTrail) {
+        final int directions[] = {0, 1, -1, 0};
+
+        Queue<Pos> que = new ArrayDeque<>();
+
+        int[][] dist = new int[nrow][ncol];
+        for (int[] a : dist) {
+            Arrays.fill(a, -1);
+        }
+
+        // goal から BFS する
+        que.add(goal);
+        dist[goal.row][goal.col] = 0;
+
+        while (!que.isEmpty()) {
+            Pos cur = que.poll();
+            if (cur.equals(start)) break;
+
+            for (int i = 0; i < 4; ++i) {
+                final int ny = cur.row + directions[i];
+                final int nx = cur.col + directions[i ^ 1];
+                final Pos nextPos = new Pos(nx, ny);
+
+                if (ny < 0 || ny >= nrow || nx < 0 || nx >= ncol) continue;
+                if (!canBeTrail.test(nextPos)) continue;
+                if (dist[ny][nx] != -1) continue;
+
+                dist[ny][nx] = dist[cur.row][cur.col] + 1;
+                que.add(nextPos);
+            }
+        }
+
+        // start から goal に向かって経路復元する
+
+        final int distance = dist[start.row][start.col];
+        final List<Pos> path = new ArrayList<>(distance);
+        Pos cur = start;
+        while (!cur.equals(goal)) {
+            path.add(cur);
+            for (int i = 0; i < 4; ++i) {
+                final int ny = cur.row + directions[i];
+                final int nx = cur.col + directions[i ^ 1];
+                if (ny < 0 || ny >= nrow || nx < 0 || nx >= ncol) continue;
+                if (dist[ny][nx] == dist[cur.row][cur.col] - 1) {
+                    cur = new Pos(nx, ny);
+                    break;
+                }
+            }
+        }
+        path.add(goal);
+        return path;
     }
 }
