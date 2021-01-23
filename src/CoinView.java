@@ -2,15 +2,18 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
 public class CoinView {
-    private static final String imageFilePath = "png/coin_01.png";
+    private static final String imageFilePath = "png/full-coins.png";
 
-    private final Image image;
+    private final ImageFrameAnimation coinRotateAnimation;
 
     public CoinView() {
-        this.image = new Image(imageFilePath);
+        Image img = new Image(imageFilePath);
+        SpriteSheet coinSpriteSheet = new SpriteSheet(img, 8, 1);
+        this.coinRotateAnimation = new ImageFrameAnimation(coinSpriteSheet, 100, ImageFrameAnimation.Direction.NORMAL);
+        this.coinRotateAnimation.start();
     }
 
     public void draw(GraphicsContext gc, double x, double y, double w, double h) {
-        gc.drawImage(this.image, x, y, w, h);
+        this.coinRotateAnimation.draw(gc, x, y, w, h);
     }
 }
