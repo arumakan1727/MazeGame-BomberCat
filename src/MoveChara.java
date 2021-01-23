@@ -1,5 +1,8 @@
+import javafx.animation.Animation;
+import javafx.animation.Transition;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.util.Duration;
 
 public class MoveChara {
     public static final int TYPE_DOWN = 0;
@@ -12,18 +15,35 @@ public class MoveChara {
     private static final String pngPathPrefix = "png/cat/neko1";
     private static final String pngPathSuffix = ".png";
 
+    private double drawnX;
+    private double drawnY;
+    private Transition moveTransition;
+
     private int posCol;
     private int posRow;
     private int charaDirection;
 
     private final MapData mapData;
 
+    // TODO MapView ではなく interface にする
+    private final MapView mapView;
+
     private final ImageFrameAnimation[] charaAnimations;
 
-    public MoveChara(int startCol, int startRow, MapData mapData) {
+    public MoveChara(int startCol, int startRow, MapData mapData, MapView mapView) {
         this.posCol = startCol;
         this.posRow = startRow;
         this.mapData = mapData;
+        this.mapView = mapView;
+        System.out.println("new MoveChara: col=" + posCol + ", row=" + posRow);
+
+        this.drawnX = mapView.getCellDrawX(this.posCol);
+        this.drawnY = mapView.getCellDrawY(this.posRow);
+        this.moveTransition = new Transition() {
+            @Override
+            protected void interpolate(double frac) {
+            }
+        };
 
         this.charaAnimations = new ImageFrameAnimation[4];
 
@@ -43,10 +63,8 @@ public class MoveChara {
     }
 
     public void draw(GraphicsContext gc, MapView mapView) {
-        final int x = mapView.getCellDrawX(this.posCol);
-        final int y = mapView.getCellDrawY(this.posRow);
         final int cellSize = mapView.getCellSize();
-        this.charaAnimations[this.charaDirection].draw(gc, x, y, cellSize, cellSize);
+        this.charaAnimations[this.charaDirection].draw(gc, this.drawnX, this.drawnY, cellSize, cellSize);
     }
 
     // set the cat's image of a direction
@@ -71,14 +89,39 @@ public class MoveChara {
     }
 
     // move the cat
-    public boolean moveBy(int dx, int dy) {
+    public boolean moveBy(int dx, int dy, Duration duration) {
         if (isMovableBy(dx, dy)) {
-            posCol += dx;
-            posRow += dy;
+            final int toCol = this.posCol + dx;
+            final int toRow = this.posRow + dy;
+            final double fromX = this.mapView.getCellDrawX(this.posCol);
+            final double fromY = this.mapView.getCellDrawY(this.posRow);
+            final double toX = this.mapView.getCellDrawX(toCol);
+            final double toY = this.mapView.getCellDrawY(toRow);
+
+            MoveChara.this.posCol = toCol;
+            MoveChara.this.posRow = toRow;
+
+            this.moveTransition = new Transition() {
+                {
+                    setCycleDuration(duration);
+                }
+
+                @Override
+                protected void interpolate(double frac) {
+                    MoveChara.this.drawnX = fromX + (toX - fromX) * frac;
+                    MoveChara.this.drawnY = fromY + (toY - fromY) * frac;
+                }
+            };
+
+            this.moveTransition.play();
             return true;
         } else {
             return false;
         }
+    }
+
+    public Animation.Status getMoveTransitionStatus() {
+        return this.moveTransition.getStatus();
     }
 
     // getter: column-position of the cat
