@@ -16,6 +16,8 @@ public class MazePhase implements Phase {
     private final MapView mapView;
     private final MoveChara player;
 
+    private final BombExecutor bombExecutor;
+
     private final AudioClip bgm;
     private final AudioClip coinSE;
     private final AudioClip keySE;
@@ -30,6 +32,7 @@ public class MazePhase implements Phase {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
+        this.bombExecutor = new BombExecutor();
 
         this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
         this.bgm.setVolume(0.3);
@@ -61,13 +64,14 @@ public class MazePhase implements Phase {
 
     @Override
     public void update(long now) {
-
+        this.bombExecutor.update(mapData);
     }
 
     @Override
     public void draw(GraphicsContext gc) {
         mapView.draw(gc);
         player.draw(gc, mapView);
+        this.bombExecutor.draw(gc, mapView);
         this.drawScore(gc);
         this.guideMessage.draw(gc);
     }
@@ -87,14 +91,25 @@ public class MazePhase implements Phase {
         }
 
         KeyCode key = event.getCode();
-        if (key == KeyCode.H || key == KeyCode.LEFT) {
-            leftButtonAction();
-        } else if (key == KeyCode.J || key == KeyCode.DOWN) {
-            downButtonAction();
-        } else if (key == KeyCode.K || key == KeyCode.UP) {
-            upButtonAction();
-        } else if (key == KeyCode.L || key == KeyCode.RIGHT) {
-            rightButtonAction();
+        switch (event.getCode()) {
+            case H:
+            case LEFT:
+                leftButtonAction();
+                break;
+            case J:
+            case DOWN:
+                downButtonAction();
+                break;
+            case K:
+            case UP:
+                upButtonAction();
+                break;
+            case L:
+            case RIGHT:
+                rightButtonAction();
+                break;
+            case SPACE:
+                spaceButtonAction();
         }
     }
 
@@ -177,23 +192,37 @@ public class MazePhase implements Phase {
     public void upButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_UP);
         player.moveBy(0, -1);
+        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat down
     public void downButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_DOWN);
         player.moveBy(0, 1);
+        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
     public void leftButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_LEFT);
         player.moveBy(-1, 0);
+        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
     public void rightButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
         player.moveBy(1, 0);
+        this.actionAfterPlayerMove();
+    }
+
+    public void spaceButtonAction() {
+        if (bombExecutor.isExistsBombAt(player.getPosCol(), player.getPosRow())) {
+            return;
+        }
+        if (bombExecutor.countBomb() >= 3) {
+            return;
+        }
+        bombExecutor.registerNewBomb(player.getPosCol(), player.getPosRow());
     }
 }

@@ -67,6 +67,10 @@ public class ImageFrameAnimation extends AnimationTimer {
         this.imageFrames.drawFrame(gc, this.currentFrameIndex, x, y);
     }
 
+    public int getCurrentFrameIndex() {
+        return currentFrameIndex;
+    }
+
     @Override
     public void handle(long now) {
         if (this.startTime == 0) {
