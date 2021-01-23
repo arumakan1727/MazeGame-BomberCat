@@ -7,9 +7,7 @@ public class Bomb {
     public final int col;
     public final int row;
 
-    private final ImageFrameAnimation bombAnimation;
-
-    private boolean hasExploded = false;
+    public final ImageFrameAnimation bombAnimation;
 
     public Bomb(int col, int row) {
         this.col = col;
@@ -22,12 +20,12 @@ public class Bomb {
     }
 
     public boolean hasExploded() {
-        return hasExploded;
+        return this.bombAnimation.isDead();
     }
 
     public void draw(GraphicsContext gc, MapView mapView) {
         if (this.bombAnimation.getCurrentFrameIndex() <= 0) {
-            this.hasExploded = true;
+            this.bombAnimation.setDead(true);
             this.bombAnimation.stop();
             return;
         }

@@ -26,6 +26,7 @@ public class ImageFrameAnimation extends MyTimer {
     private final Direction animationDirection;
     private int currentFrameIndex;
     private boolean isPlus;
+    private boolean isInfinite = true;
 
     private final long durationNano;
 
@@ -58,6 +59,14 @@ public class ImageFrameAnimation extends MyTimer {
         }
     }
 
+    public boolean isInfinite() {
+        return isInfinite;
+    }
+
+    public void setInfinite(boolean infinite) {
+        isInfinite = infinite;
+    }
+
     public void draw(GraphicsContext gc, double x, double y, double w, double h) {
         this.imageFrames.drawFrame(gc, this.currentFrameIndex, x, y, w, h);
     }
@@ -72,6 +81,11 @@ public class ImageFrameAnimation extends MyTimer {
 
     @Override
     public void update(long elapsedTimeNano) {
+        if (!this.isInfinite && elapsedTimeNano > durationNano * this.imageFrames.countFrame()) {
+            this.setDead(true);
+            return;
+        }
+
         final long preCount = currentFrameCount;
         this.currentFrameCount = elapsedTimeNano / durationNano;
 
