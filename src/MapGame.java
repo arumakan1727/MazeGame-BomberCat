@@ -18,4 +18,8 @@ public class MapGame extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
+    public static String getResourceAsString(String path) {
+        return MapGame.class.getResource(path).toString();
+    }
 }

@@ -43,6 +43,10 @@ public class MapView {
         return this.cellSize * this.mapData.getHeight();
     }
 
+    public int getMapBottomY() {
+        return this.getMapTopY() + this.getMapHeight();
+    }
+
     private void drawCells(GraphicsContext gc) {
         final int nrow = this.mapData.getHeight();
         final int ncol = this.mapData.getWidth();
