@@ -4,6 +4,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
 
@@ -18,6 +19,9 @@ public class MazePhase implements Phase {
     private final MoveChara player;
     private final Duration playerMoveDuration = Duration.millis(200);
 
+    private final Circle blindHollowAtPlayer;
+    private boolean isBlindEnabled = true;
+
     private final BombExecutor bombExecutor;
 
     private final AudioClip bgm;
@@ -30,13 +34,14 @@ public class MazePhase implements Phase {
     private int score = 0;
     private boolean isPlayerControllable = true;
 
-    private boolean[] isKeyPushed;
+    private final boolean[] isKeyPushed;
 
     public MazePhase() {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.mapView.setMapTopY(40);
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
+        this.blindHollowAtPlayer = new Circle(mapView.getCellSize() * 3);
         this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
 
         this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
@@ -55,6 +60,12 @@ public class MazePhase implements Phase {
 
     public boolean isKeyPushed(KeyCode keyCode) {
         return this.isKeyPushed[keyCode.ordinal()];
+    }
+
+    public void hollowAtPlayer() {
+        final int sHalf = mapView.getCellSize() / 2;
+        this.blindHollowAtPlayer.setCenterX(player.getDrawnX() + sHalf);
+        this.blindHollowAtPlayer.setCenterY(player.getDrawnY() + sHalf);
     }
 
     @Override
@@ -76,6 +87,7 @@ public class MazePhase implements Phase {
     @Override
     public void update(long now) {
         this.bombExecutor.update(mapData);
+        this.hollowAtPlayer();
 
         if (isPlayerControllable) {
             if (isKeyPushed(KeyCode.H) || isKeyPushed(KeyCode.LEFT)) {
@@ -92,11 +104,34 @@ public class MazePhase implements Phase {
 
     @Override
     public void draw(GraphicsContext gc) {
-        mapView.draw(gc);
-        player.draw(gc, mapView);
-        this.bombExecutor.draw(gc, mapView);
+        gc.save();
+        {
+            if (this.isBlindEnabled) {
+                gc.setFill(Color.BLACK);
+                gc.fillRect(mapView.getMapLeftX(), mapView.getMapTopY(), mapView.getMapWidth(), mapView.getMapHeight());
+                clipHoles(gc, blindHollowAtPlayer);
+            }
+            mapView.draw(gc);
+            player.draw(gc, mapView);
+            this.bombExecutor.draw(gc, mapView);
+        }
+        gc.restore();
+
         this.drawScore(gc);
         this.guideMessage.draw(gc);
+    }
+
+    private void clipHoles(GraphicsContext gc, Circle... holes) {
+        gc.beginPath();
+        for (Circle hole : holes) {
+            final double cx = hole.getCenterX();
+            final double cy = hole.getCenterY();
+            final double r = hole.getRadius();
+            gc.moveTo(cx - r, cy);
+            gc.arc(cx, cy, r, r, 180, 360);
+        }
+        gc.closePath();
+        gc.clip();
     }
 
     private static MapSkin createDefaultMapSkin() {
@@ -125,6 +160,10 @@ public class MazePhase implements Phase {
                 break;
             case F:
                 putCoinTrailToGoal();
+                break;
+            case ESCAPE:
+                this.isBlindEnabled = !this.isBlindEnabled;
+                break;
         }
     }
 

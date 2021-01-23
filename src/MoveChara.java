@@ -137,4 +137,12 @@ public class MoveChara {
     public Pos getPos() {
         return new Pos(posCol, posRow);
     }
+
+    public double getDrawnX() {
+        return drawnX;
+    }
+
+    public double getDrawnY() {
+        return drawnY;
+    }
 }
