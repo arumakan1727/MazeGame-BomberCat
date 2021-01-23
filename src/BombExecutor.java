@@ -63,11 +63,13 @@ public class BombExecutor {
         final int[] directions = {0, 1, 0, -1};
 
         for (int i = 0; i < 4; ++i) {
-            final int dy = directions[i];
-            final int dx = directions[i ^ 1];
-            if (mapData.getCellType(col + dx, row + dy) == CellType.BREAKABLE_BLOCK) {
-                mapData.setCellType(col + dx, row + dy, CellType.SPACE);
-                explosionList.add(new Explosion(col + dx, row + dy));
+            final int y = row + directions[i];
+            final int x = col + directions[i ^ 1];
+            if (mapData.getCellType(x, y) == CellType.BREAKABLE_BLOCK) {
+                mapData.setCellType(x, y, CellType.SPACE);
+            }
+            if (mapData.getCellType(x, y) != CellType.WALL) {
+                explosionList.add(new Explosion(x, y));
             }
         }
     }
