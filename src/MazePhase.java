@@ -21,7 +21,7 @@ public class MazePhase implements Phase {
     private final AudioClip keySE;
     private final AudioClip goalSE;
 
-    private MessageArea guideMessage;
+    private final MessageArea guideMessage;
 
     private int score = 0;
     private boolean isPlayerControllable = true;
@@ -96,19 +96,6 @@ public class MazePhase implements Phase {
         } else if (key == KeyCode.L || key == KeyCode.RIGHT) {
             rightButtonAction();
         }
-
-        final int playerCol = player.getPosCol();
-        final int playerRow = player.getPosRow();
-
-        // ゴール扉が開いている状態でゴールマスに重なったらゴール処理
-        if (mapData.isGoalOpen() && playerCol == mapData.getGoalX() && playerRow == mapData.getGoalY()) {
-            goalAction();
-        }
-
-        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
-        if (mapData.getItemType(playerCol, playerRow) != ItemType.NONE) {
-            itemGetAction(playerCol, playerRow);
-        }
     }
 
     public void itemGetAction(int col, int row) {
@@ -136,6 +123,21 @@ public class MazePhase implements Phase {
         } else {
             final int n = mapData.countExistingKeys();
             this.guideMessage.setMessage("カギを拾った！ のこり " + n + " つ！");
+        }
+    }
+
+    private void actionAfterPlayerMove() {
+        final int playerCol = player.getPosCol();
+        final int playerRow = player.getPosRow();
+
+        // ゴール扉が開いている状態でゴールマスに重なったらゴール処理
+        if (mapData.isGoalOpen() && playerCol == mapData.getGoalX() && playerRow == mapData.getGoalY()) {
+            goalAction();
+        }
+
+        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
+        if (mapData.getItemType(playerCol, playerRow) != ItemType.NONE) {
+            itemGetAction(playerCol, playerRow);
         }
     }
 
