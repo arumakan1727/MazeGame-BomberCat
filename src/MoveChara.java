@@ -7,9 +7,9 @@ public class MoveChara {
     public static final int TYPE_RIGHT = 2;
     public static final int TYPE_UP = 3;
 
-    private static final String[] directionStrings = {"Down", "Left", "Right", "Up"};
+    private static final String[] directionStrings = {"d", "l", "r", "u"};
     private static final String[] animationNumbers = {"1", "2", "3"};
-    private static final String pngPathPrefix = "png/cat/cat";
+    private static final String pngPathPrefix = "png/cat/neko1";
     private static final String pngPathSuffix = ".png";
 
     private int posCol;
