@@ -21,6 +21,8 @@ public class MazePhase implements Phase {
     private final AudioClip keySE;
     private final AudioClip goalSE;
 
+    private MessageArea guideMessage;
+
     private int score = 0;
     private boolean isPlayerControllable = true;
 
@@ -38,6 +40,8 @@ public class MazePhase implements Phase {
         this.goalSE = new AudioClip(getClass().getResource("sound/goal.wav").toString());
 
         this.mapView.setMapTopY(40);
+
+        this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), 28, new Font(16));
     }
 
     @Override
@@ -45,6 +49,8 @@ public class MazePhase implements Phase {
         this.scene = scene;
         this.scene.setOnKeyPressed(this::keyPressedAction);
         this.bgm.play();
+
+        this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 を開けよう！");
     }
 
     @Override
@@ -62,6 +68,7 @@ public class MazePhase implements Phase {
         mapView.draw(gc);
         player.draw(gc, mapView);
         this.drawScore(gc);
+        this.guideMessage.draw(gc);
     }
 
     private static MapSkin createDefaultMapSkin() {
@@ -108,14 +115,25 @@ public class MazePhase implements Phase {
         this.mapData.setItemType(col, row, ItemType.NONE);
 
         if (itemType == ItemType.COIN) {
-            this.coinSE.play();
+            this.coinGetAction(col, row);
         } else if (itemType == ItemType.KEY) {
-            this.keySE.play();
+            this.keyGetAction(col, row);
         }
+    }
 
+    private void coinGetAction(int col, int row) {
+        this.coinSE.play();
+    }
+
+    private void keyGetAction(int col, int row) {
+        this.keySE.play();
 
         if (mapData.countExistingKeys() <= 0) {
             this.mapData.setGoalOpen(true);
+            this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 が開いた！");
+        } else {
+            final int n = mapData.countExistingKeys();
+            this.guideMessage.setMessage("カギを拾った！ のこり " + n + " つ！");
         }
     }
 
