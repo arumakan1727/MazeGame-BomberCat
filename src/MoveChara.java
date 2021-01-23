@@ -90,4 +90,8 @@ public class MoveChara {
     public int getPosRow() {
         return posRow;
     }
+
+    public Pos getPos() {
+        return new Pos(posCol, posRow);
+    }
 }
