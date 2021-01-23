@@ -1,7 +1,6 @@
-import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
-public class ImageFrameAnimation extends AnimationTimer {
+public class ImageFrameAnimation extends MyTimer {
 
     public enum Direction {
         /**
@@ -27,9 +26,9 @@ public class ImageFrameAnimation extends AnimationTimer {
     private final Direction animationDirection;
     private int currentFrameIndex;
     private boolean isPlus;
+    private boolean isInfinite = true;
 
-    private final long duration;
-    private long startTime = 0;
+    private final long durationNano;
 
     private long currentFrameCount = 0;
 
@@ -46,8 +45,9 @@ public class ImageFrameAnimation extends AnimationTimer {
             long durationMilliSec,
             Direction animationDirection
     ) {
+        super();
         this.imageFrames = imageFrames;
-        this.duration = durationMilliSec * 1000000L;  // ms -> ns
+        this.durationNano = durationMilliSec * 1000000L;  // ms -> ns
         this.animationDirection = animationDirection;
 
         if (this.animationDirection == Direction.REVERSE) {
@@ -59,6 +59,14 @@ public class ImageFrameAnimation extends AnimationTimer {
         }
     }
 
+    public boolean isInfinite() {
+        return isInfinite;
+    }
+
+    public void setInfinite(boolean infinite) {
+        isInfinite = infinite;
+    }
+
     public void draw(GraphicsContext gc, double x, double y, double w, double h) {
         this.imageFrames.drawFrame(gc, this.currentFrameIndex, x, y, w, h);
     }
@@ -67,14 +75,19 @@ public class ImageFrameAnimation extends AnimationTimer {
         this.imageFrames.drawFrame(gc, this.currentFrameIndex, x, y);
     }
 
+    public int getCurrentFrameIndex() {
+        return currentFrameIndex;
+    }
+
     @Override
-    public void handle(long now) {
-        if (this.startTime == 0) {
-            this.startTime = now;
+    public void update(long elapsedTimeNano) {
+        if (!this.isInfinite && elapsedTimeNano > durationNano * this.imageFrames.countFrame()) {
+            this.setDead(true);
+            return;
         }
 
         final long preCount = currentFrameCount;
-        this.currentFrameCount = (now - startTime) / duration;
+        this.currentFrameCount = elapsedTimeNano / durationNano;
 
         // 次のフレームへ切り替えるタイミングにまだ到達していない場合は何もしない
         if (preCount == this.currentFrameCount) {

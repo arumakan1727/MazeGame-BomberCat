@@ -16,12 +16,14 @@ public class MazePhase implements Phase {
     private final MapView mapView;
     private final MoveChara player;
 
+    private final BombExecutor bombExecutor;
+
     private final AudioClip bgm;
     private final AudioClip coinSE;
     private final AudioClip keySE;
     private final AudioClip goalSE;
 
-    private MessageArea guideMessage;
+    private final MessageArea guideMessage;
 
     private int score = 0;
     private boolean isPlayerControllable = true;
@@ -30,6 +32,7 @@ public class MazePhase implements Phase {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
+        this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
 
         this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
         this.bgm.setVolume(0.3);
@@ -61,13 +64,14 @@ public class MazePhase implements Phase {
 
     @Override
     public void update(long now) {
-
+        this.bombExecutor.update(mapData);
     }
 
     @Override
     public void draw(GraphicsContext gc) {
         mapView.draw(gc);
         player.draw(gc, mapView);
+        this.bombExecutor.draw(gc, mapView);
         this.drawScore(gc);
         this.guideMessage.draw(gc);
     }
@@ -75,7 +79,8 @@ public class MazePhase implements Phase {
     private static MapSkin createDefaultMapSkin() {
         EnumMap<CellType, String> cellImagePaths = new EnumMap<>(CellType.class);
         cellImagePaths.put(CellType.SPACE, "png/SPACE.png");
-        cellImagePaths.put(CellType.WALL, "png/WALL.png");
+        cellImagePaths.put(CellType.WALL, "png/stone-block.png");
+        cellImagePaths.put(CellType.BREAKABLE_BLOCK, "png/ice-block.png");
         return new MapSkin(cellImagePaths);
     }
 
@@ -86,27 +91,25 @@ public class MazePhase implements Phase {
         }
 
         KeyCode key = event.getCode();
-        if (key == KeyCode.H || key == KeyCode.LEFT) {
-            leftButtonAction();
-        } else if (key == KeyCode.J || key == KeyCode.DOWN) {
-            downButtonAction();
-        } else if (key == KeyCode.K || key == KeyCode.UP) {
-            upButtonAction();
-        } else if (key == KeyCode.L || key == KeyCode.RIGHT) {
-            rightButtonAction();
-        }
-
-        final int playerCol = player.getPosCol();
-        final int playerRow = player.getPosRow();
-
-        // ゴール扉が開いている状態でゴールマスに重なったらゴール処理
-        if (mapData.isGoalOpen() && playerCol == mapData.getGoalX() && playerRow == mapData.getGoalY()) {
-            goalAction();
-        }
-
-        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
-        if (mapData.getItemType(playerCol, playerRow) != ItemType.NONE) {
-            itemGetAction(playerCol, playerRow);
+        switch (event.getCode()) {
+            case H:
+            case LEFT:
+                leftButtonAction();
+                break;
+            case J:
+            case DOWN:
+                downButtonAction();
+                break;
+            case K:
+            case UP:
+                upButtonAction();
+                break;
+            case L:
+            case RIGHT:
+                rightButtonAction();
+                break;
+            case SPACE:
+                spaceButtonAction();
         }
     }
 
@@ -135,6 +138,21 @@ public class MazePhase implements Phase {
         } else {
             final int n = mapData.countExistingKeys();
             this.guideMessage.setMessage("カギを拾った！ のこり " + n + " つ！");
+        }
+    }
+
+    private void actionAfterPlayerMove() {
+        final int playerCol = player.getPosCol();
+        final int playerRow = player.getPosRow();
+
+        // ゴール扉が開いている状態でゴールマスに重なったらゴール処理
+        if (mapData.isGoalOpen() && playerCol == mapData.getGoalX() && playerRow == mapData.getGoalY()) {
+            goalAction();
+        }
+
+        // プレイヤーがアイテムマスに重なったならアイテム拾得処理
+        if (mapData.getItemType(playerCol, playerRow) != ItemType.NONE) {
+            itemGetAction(playerCol, playerRow);
         }
     }
 
@@ -174,23 +192,37 @@ public class MazePhase implements Phase {
     public void upButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_UP);
         player.moveBy(0, -1);
+        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat down
     public void downButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_DOWN);
         player.moveBy(0, 1);
+        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
     public void leftButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_LEFT);
         player.moveBy(-1, 0);
+        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
     public void rightButtonAction() {
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
         player.moveBy(1, 0);
+        this.actionAfterPlayerMove();
+    }
+
+    public void spaceButtonAction() {
+        if (bombExecutor.isExistsBombAt(player.getPosCol(), player.getPosRow())) {
+            return;
+        }
+        if (bombExecutor.countBomb() >= 3) {
+            return;
+        }
+        bombExecutor.registerNewBomb(player.getPosCol(), player.getPosRow());
     }
 }

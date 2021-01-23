@@ -36,8 +36,9 @@ public class MapData {
         this.cellTypeGrid = new CellType[height][width];
         this.itemTypeGrid = new ItemType[height][width];
 
-        this.fillMap(CellType.WALL);
+        this.fillMap(CellType.BREAKABLE_BLOCK);
         this.digMap(1, 3);
+        this.fillOuterWall();
 
         this.placeGoal();
 
@@ -169,6 +170,17 @@ public class MapData {
         }
     }
 
+    public void fillOuterWall() {
+        for (int y = 0; y < height; ++y) {
+            cellTypeGrid[y][0] = CellType.WALL;
+            cellTypeGrid[y][width - 1] = CellType.WALL;
+        }
+        for (int x = 0; x < width; ++x) {
+            cellTypeGrid[0][x] = CellType.WALL;
+            cellTypeGrid[height - 1][x] = CellType.WALL;
+        }
+    }
+
     /**
      * 迷路の通り道を セル(x, y) から再帰的に作る。
      *
@@ -192,7 +204,8 @@ public class MapData {
         for (int[] direction : dl) {
             final int dx = direction[0];
             final int dy = direction[1];
-            if (getCellType(x + dx * 2, y + dy * 2) == CellType.WALL) {
+            final CellType c = getCellType(x + dx * 2, y + dy * 2);
+            if (c != CellType.ILLEGAL && !c.isMovable()) {
                 setCellType(x + dx, y + dy, CellType.SPACE);
                 digMap(x + dx * 2, y + dy * 2);
             }
@@ -288,10 +301,10 @@ public class MapData {
 
                 // 上下左右の壁の数を数える。
                 int wallCount = 0;
-                if (getCellType(x + 1, y) == CellType.WALL) wallCount++;
-                if (getCellType(x - 1, y) == CellType.WALL) wallCount++;
-                if (getCellType(x, y + 1) == CellType.WALL) wallCount++;
-                if (getCellType(x, y - 1) == CellType.WALL) wallCount++;
+                if (!getCellType(x + 1, y).isMovable()) wallCount++;
+                if (!getCellType(x - 1, y).isMovable()) wallCount++;
+                if (!getCellType(x, y + 1).isMovable()) wallCount++;
+                if (!getCellType(x, y - 1).isMovable()) wallCount++;
 
                 // 周囲がコの字に壁で囲まれているならゴール候補に追加
                 if (wallCount == 3) {
