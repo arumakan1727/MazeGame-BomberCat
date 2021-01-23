@@ -41,7 +41,8 @@ public class MazePhase implements Phase {
 
         this.mapView.setMapTopY(40);
 
-        this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), 28, new Font(16));
+        final Font pixelFont = Font.loadFont(MapGame.getResourceAsString("font/PixelMplus12-Regular.ttf"), 16);
+        this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), 28, pixelFont);
     }
 
     @Override
