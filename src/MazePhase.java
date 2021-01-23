@@ -32,7 +32,7 @@ public class MazePhase implements Phase {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
-        this.bombExecutor = new BombExecutor();
+        this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
 
         this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
         this.bgm.setVolume(0.3);

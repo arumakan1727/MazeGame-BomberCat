@@ -1,5 +1,6 @@
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.media.AudioClip;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -8,10 +9,12 @@ import java.util.ListIterator;
 public class BombExecutor {
     private final List<Bomb> bombList;
     private final List<Explosion> explosionList;
+    private final AudioClip explosionSE;
 
-    public BombExecutor() {
+    public BombExecutor(AudioClip explosionSE) {
         this.bombList = new LinkedList<>();
         this.explosionList = new LinkedList<>();
+        this.explosionSE = explosionSE;
     }
 
     public void register(Bomb bomb) {
@@ -38,6 +41,7 @@ public class BombExecutor {
             if (bomb.hasExploded()) {
                 breakFourNeighborBlock(mapData, bomb.col, bomb.row, this.explosionList);
                 this.explosionList.add(new Explosion(bomb.col, bomb.row));
+                this.explosionSE.play();
                 itr.remove();
             }
         }
