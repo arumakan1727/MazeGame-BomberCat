@@ -280,8 +280,11 @@ public class MapData {
         for (int y = 1; y < height - 1; y++) {
             for (int x = 1; x < width - 1; x++) {
 
-                // 今観ているマスが壁ならば、ゴールを配置できないのでスキップ
+                // 今見ているマスが壁ならば、ゴールを配置できないのでスキップ
                 if (getCellType(x, y) != CellType.SPACE) continue;
+
+                // プレイヤーのスタートマスにゴールは配置できないのでスキップ
+                if (y == getPlayerStartY() && x == getPlayerStartX()) continue;
 
                 // 上下左右の壁の数を数える。
                 int wallCount = 0;
