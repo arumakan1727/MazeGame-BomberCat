@@ -75,7 +75,8 @@ public class MazePhase implements Phase {
     private static MapSkin createDefaultMapSkin() {
         EnumMap<CellType, String> cellImagePaths = new EnumMap<>(CellType.class);
         cellImagePaths.put(CellType.SPACE, "png/SPACE.png");
-        cellImagePaths.put(CellType.WALL, "png/WALL.png");
+        cellImagePaths.put(CellType.WALL, "png/stone-block.png");
+        cellImagePaths.put(CellType.BREAKABLE_BLOCK, "png/ice-block.png");
         return new MapSkin(cellImagePaths);
     }
 

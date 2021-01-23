@@ -1,6 +1,7 @@
 public enum CellType {
     SPACE(true),
     WALL(false),
+    BREAKABLE_BLOCK(false),
     ILLEGAL(false);
 
     private boolean isMovable;
