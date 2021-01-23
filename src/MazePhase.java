@@ -1,9 +1,11 @@
+import javafx.animation.Animation;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.util.Duration;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -14,6 +16,7 @@ public class MazePhase implements Phase {
     private final MapData mapData;
     private final MapView mapView;
     private final MoveChara player;
+    private final Duration playerMoveDuration = Duration.millis(200);
 
     private final BombExecutor bombExecutor;
 
@@ -27,10 +30,13 @@ public class MazePhase implements Phase {
     private int score = 0;
     private boolean isPlayerControllable = true;
 
+    private boolean[] isKeyPushed;
+
     public MazePhase() {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
-        this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData);
+        this.mapView.setMapTopY(40);
+        this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
         this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
 
         this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
@@ -41,16 +47,21 @@ public class MazePhase implements Phase {
         this.keySE = new AudioClip(MapGame.getResourceAsString("sound/se_maoudamashii_system46.mp3"));
         this.goalSE = new AudioClip(MapGame.getResourceAsString("sound/goal.wav"));
 
-        this.mapView.setMapTopY(40);
-
         final Font pixelFont = Font.loadFont(MapGame.getResourceAsString("font/PixelMplus12-Regular.ttf"), 16);
         this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), 28, pixelFont);
+
+        this.isKeyPushed = new boolean[KeyCode.values().length];
+    }
+
+    public boolean isKeyPushed(KeyCode keyCode) {
+        return this.isKeyPushed[keyCode.ordinal()];
     }
 
     @Override
     public void setup(MapGameScene scene) {
         this.scene = scene;
         this.scene.setOnKeyPressed(this::keyPressedAction);
+        this.scene.setOnKeyReleased(this::keyReleasedAction);
         this.bgm.play();
 
         this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 を開けよう！");
@@ -59,11 +70,24 @@ public class MazePhase implements Phase {
     @Override
     public void tearDown() {
         this.scene.setOnKeyPressed(null);
+        this.scene.setOnKeyReleased(null);
     }
 
     @Override
     public void update(long now) {
         this.bombExecutor.update(mapData);
+
+        if (isPlayerControllable) {
+            if (isKeyPushed(KeyCode.H) || isKeyPushed(KeyCode.LEFT)) {
+                leftButtonAction();
+            } else if (isKeyPushed(KeyCode.J) || isKeyPushed(KeyCode.DOWN)) {
+                downButtonAction();
+            } else if (isKeyPushed(KeyCode.K) || isKeyPushed(KeyCode.UP)) {
+                upButtonAction();
+            } else if (isKeyPushed(KeyCode.L) || isKeyPushed(KeyCode.RIGHT)) {
+                rightButtonAction();
+            }
+        }
     }
 
     @Override
@@ -83,30 +107,19 @@ public class MazePhase implements Phase {
         return new MapSkin(cellImagePaths);
     }
 
+    public void keyReleasedAction(KeyEvent event) {
+        this.isKeyPushed[event.getCode().ordinal()] = false;
+    }
+
     // Get users key actions
     public void keyPressedAction(KeyEvent event) {
+        this.isKeyPushed[event.getCode().ordinal()] = true;
+
         if (!isPlayerControllable) {
             return;
         }
 
-        KeyCode key = event.getCode();
         switch (event.getCode()) {
-            case H:
-            case LEFT:
-                leftButtonAction();
-                break;
-            case J:
-            case DOWN:
-                downButtonAction();
-                break;
-            case K:
-            case UP:
-                upButtonAction();
-                break;
-            case L:
-            case RIGHT:
-                rightButtonAction();
-                break;
             case SPACE:
                 spaceButtonAction();
                 break;
@@ -192,29 +205,33 @@ public class MazePhase implements Phase {
 
     // Operations for going the cat down
     public void upButtonAction() {
+        if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_UP);
-        player.moveBy(0, -1);
+        player.moveBy(0, -1, playerMoveDuration);
         this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat down
     public void downButtonAction() {
+        if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_DOWN);
-        player.moveBy(0, 1);
+        player.moveBy(0, 1, playerMoveDuration);
         this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
     public void leftButtonAction() {
+        if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_LEFT);
-        player.moveBy(-1, 0);
+        player.moveBy(-1, 0, playerMoveDuration);
         this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
     public void rightButtonAction() {
+        if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
-        player.moveBy(1, 0);
+        player.moveBy(1, 0, playerMoveDuration);
         this.actionAfterPlayerMove();
     }
 
