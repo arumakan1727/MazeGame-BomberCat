@@ -118,7 +118,7 @@ public class MazePhase implements Phase {
                 clipHoles(gc, blindHollowAtPlayer);
             }
             mapView.draw(gc);
-            player.draw(gc, mapView);
+            player.draw(gc);
             this.bombExecutor.draw(gc);
         }
         gc.restore();
