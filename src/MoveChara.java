@@ -4,6 +4,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.util.Duration;
 
+import java.util.function.Consumer;
+
 public class MoveChara {
     public static final int TYPE_DOWN = 0;
     public static final int TYPE_LEFT = 1;
@@ -29,6 +31,8 @@ public class MoveChara {
     private final MapView mapView;
 
     private final ImageFrameAnimation[] charaAnimations;
+
+    private Consumer<MoveChara> onSelfMove = null;
 
     public MoveChara(int startCol, int startRow, MapData mapData, MapView mapView) {
         this.posCol = startCol;
@@ -79,6 +83,14 @@ public class MoveChara {
         }
     }
 
+    public Consumer<MoveChara> getOnSelfMove() {
+        return onSelfMove;
+    }
+
+    public void setOnMoveHandler(Consumer<MoveChara> onSelfMove) {
+        this.onSelfMove = onSelfMove;
+    }
+
     public int getCharaDirection() {
         return this.charaDirection;
     }
@@ -98,10 +110,9 @@ public class MoveChara {
             final double toX = this.mapView.getCellDrawX(toCol);
             final double toY = this.mapView.getCellDrawY(toRow);
 
-            MoveChara.this.posCol = toCol;
-            MoveChara.this.posRow = toRow;
-
             this.moveTransition = new Transition() {
+                private boolean isFiredOnMoveEvent = false;
+
                 {
                     setCycleDuration(duration);
                 }
@@ -110,6 +121,15 @@ public class MoveChara {
                 protected void interpolate(double frac) {
                     MoveChara.this.drawnX = fromX + (toX - fromX) * frac;
                     MoveChara.this.drawnY = fromY + (toY - fromY) * frac;
+
+                    if (frac > 0.5 && !isFiredOnMoveEvent) {
+                        isFiredOnMoveEvent = true;
+                        MoveChara.this.posCol = toCol;
+                        MoveChara.this.posRow = toRow;
+                        if (onSelfMove != null) {
+                            onSelfMove.accept(MoveChara.this);
+                        }
+                    }
                 }
             };
 
