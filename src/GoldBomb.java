@@ -18,7 +18,6 @@ public class GoldBomb extends NormalBomb {
                 if (mapData.getCellType(x, y) == CellType.WALL) continue;
 
                 registerExplosion(x, y, positionResolver, explosionAnimExecutor);
-                System.out.println("Registered explosion: " + x + ", " + y);
 
                 if (mapData.getCellType(x, y) == CellType.BREAKABLE_BLOCK) {
                     mapData.setCellType(x, y, CellType.SPACE);

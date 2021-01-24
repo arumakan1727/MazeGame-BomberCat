@@ -239,7 +239,6 @@ public class MazePhase implements Phase {
     }
 
     public void goalAction() {
-        System.out.println("Goal!!!!!!!!!!!!!!!!!");
         this.isPlayerControllable = false;
         this.bgm.stop();
         this.goalSE.play();
@@ -343,7 +342,7 @@ public class MazePhase implements Phase {
      * @return start から goal までの最短ルート
      */
     public static List<Pos> calcShortestPath(Pos start, Pos goal, int ncol, int nrow, Predicate<Pos> canBeTrail) {
-        final int directions[] = {0, 1, -1, 0};
+        final int[] directions = {0, 1, -1, 0};
 
         Queue<Pos> que = new ArrayDeque<>();
 
