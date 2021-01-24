@@ -6,6 +6,7 @@ import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 
 import java.util.*;
@@ -36,6 +37,8 @@ public class MazePhase implements Phase {
 
     private final boolean[] isKeyPushed;
 
+    private final DrawableExecutor topLayerDrawable;
+
     public MazePhase() {
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
@@ -56,6 +59,8 @@ public class MazePhase implements Phase {
         this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), 28, pixelFont);
 
         this.isKeyPushed = new boolean[KeyCode.values().length];
+
+        this.topLayerDrawable = new DrawableExecutor();
     }
 
     public boolean isKeyPushed(KeyCode keyCode) {
@@ -116,6 +121,8 @@ public class MazePhase implements Phase {
             this.bombExecutor.draw(gc, mapView);
         }
         gc.restore();
+
+        this.topLayerDrawable.draw(gc);
 
         this.drawScore(gc);
         this.guideMessage.draw(gc);
@@ -181,6 +188,10 @@ public class MazePhase implements Phase {
 
     private void coinGetAction(int col, int row) {
         this.coinSE.play();
+
+        registerScoreTextFloatAnimation(ItemType.COIN.getScore(),
+                mapView.getCellDrawX(col), mapView.getCellDrawY(row),
+                this.topLayerDrawable);
     }
 
     private void keyGetAction(int col, int row) {
@@ -193,6 +204,22 @@ public class MazePhase implements Phase {
             final int n = mapData.countExistingKeys();
             this.guideMessage.setMessage("カギを拾った！ のこり " + n + " つ！");
         }
+
+        registerScoreTextFloatAnimation(ItemType.KEY.getScore(),
+                mapView.getCellDrawX(col), mapView.getCellDrawY(row),
+                this.topLayerDrawable);
+    }
+
+    private static void registerScoreTextFloatAnimation(int score, int x, int y, DrawableExecutor drawableExecutor) {
+        drawableExecutor.registerAndPlay(new TextFloatUpAnimation(
+                "+" + score,
+                x, y,
+                Font.font("sans-serif", FontWeight.BLACK, 18),
+                Color.WHITE,
+                Color.DARKORANGE,
+                Duration.millis(800),
+                24
+        ));
     }
 
     private void actionAfterPlayerMove() {
