@@ -196,6 +196,9 @@ public class MazePhase implements Phase {
                 break;
             case ENTER:
                 this.enterFeverMode();
+                break;
+            case F1:
+                this.goalAction();
         }
     }
 
