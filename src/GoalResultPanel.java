@@ -45,6 +45,14 @@ public class GoalResultPanel {
         gc.restore();
     }
 
+    public int getWidth() {
+        return WIDTH;
+    }
+
+    public int getHeight() {
+        return HEIGHT;
+    }
+
     private void drawPanel(GraphicsContext gc) {
         gc.setLineWidth(16);
         gc.setStroke(Color.BROWN);
@@ -108,5 +116,13 @@ public class GoalResultPanel {
         this.y = y;
         this.btnToTitle.setLayoutY(y + HEIGHT - MARGIN_BUTTON_BOTTOM - this.btnToTitle.getImage().getHeight());
         this.btnNewMap.setLayoutY(y + HEIGHT - MARGIN_BUTTON_BOTTOM - this.btnNewMap.getImage().getHeight());
+    }
+
+    public ImageViewButton getBtnToTitle() {
+        return btnToTitle;
+    }
+
+    public ImageViewButton getBtnNewMap() {
+        return btnNewMap;
     }
 }
