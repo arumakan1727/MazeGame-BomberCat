@@ -44,6 +44,7 @@ public class MazePhase implements Phase {
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.mapView.setMapTopY(40);
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
+        this.player.setOnMoveHandler(this::onPlayerMoved);
         this.blindHollowAtPlayer = new Circle(mapView.getCellSize() * 3);
         this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
 
@@ -222,7 +223,7 @@ public class MazePhase implements Phase {
         ));
     }
 
-    private void actionAfterPlayerMove() {
+    private void onPlayerMoved(MoveChara chara) {
         final int playerCol = player.getPosCol();
         final int playerRow = player.getPosRow();
 
@@ -274,7 +275,6 @@ public class MazePhase implements Phase {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_UP);
         player.moveBy(0, -1, playerMoveDuration);
-        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat down
@@ -282,7 +282,6 @@ public class MazePhase implements Phase {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_DOWN);
         player.moveBy(0, 1, playerMoveDuration);
-        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
@@ -290,7 +289,6 @@ public class MazePhase implements Phase {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_LEFT);
         player.moveBy(-1, 0, playerMoveDuration);
-        this.actionAfterPlayerMove();
     }
 
     // Operations for going the cat right
@@ -298,7 +296,6 @@ public class MazePhase implements Phase {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
         player.moveBy(1, 0, playerMoveDuration);
-        this.actionAfterPlayerMove();
     }
 
     public void spaceButtonAction() {
