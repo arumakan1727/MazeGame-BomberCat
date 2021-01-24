@@ -38,7 +38,6 @@ public class MoveChara {
         this.posRow = startRow;
         this.mapData = mapData;
         this.positionResolver = positionResolver;
-        System.out.println("new MoveChara: col=" + posCol + ", row=" + posRow);
 
         this.drawnX = positionResolver.getCellDrawnX(this.posCol);
         this.drawnY = positionResolver.getCellDrawnY(this.posRow);
@@ -82,10 +81,6 @@ public class MoveChara {
         }
     }
 
-    public Consumer<MoveChara> getOnSelfMove() {
-        return onSelfMove;
-    }
-
     public void setOnMoveHandler(Consumer<MoveChara> onSelfMove) {
         this.onSelfMove = onSelfMove;
     }
@@ -100,43 +95,40 @@ public class MoveChara {
     }
 
     // move the cat
-    public boolean moveBy(int dx, int dy, Duration duration) {
-        if (isMovableBy(dx, dy)) {
-            final int toCol = this.posCol + dx;
-            final int toRow = this.posRow + dy;
-            final double fromX = this.positionResolver.getCellDrawnX(this.posCol);
-            final double fromY = this.positionResolver.getCellDrawnY(this.posRow);
-            final double toX = this.positionResolver.getCellDrawnX(toCol);
-            final double toY = this.positionResolver.getCellDrawnY(toRow);
+    public void moveBy(int dx, int dy, Duration duration) {
+        if (!isMovableBy(dx, dy)) return;
 
-            this.moveTransition = new Transition() {
-                private boolean isFiredOnMoveEvent = false;
+        final int toCol = this.posCol + dx;
+        final int toRow = this.posRow + dy;
+        final double fromX = this.positionResolver.getCellDrawnX(this.posCol);
+        final double fromY = this.positionResolver.getCellDrawnY(this.posRow);
+        final double toX = this.positionResolver.getCellDrawnX(toCol);
+        final double toY = this.positionResolver.getCellDrawnY(toRow);
 
-                {
-                    setCycleDuration(duration);
-                }
+        this.moveTransition = new Transition() {
+            private boolean isFiredOnMoveEvent = false;
 
-                @Override
-                protected void interpolate(double frac) {
-                    MoveChara.this.drawnX = fromX + (toX - fromX) * frac;
-                    MoveChara.this.drawnY = fromY + (toY - fromY) * frac;
+            {
+                setCycleDuration(duration);
+            }
 
-                    if (frac > 0.5 && !isFiredOnMoveEvent) {
-                        isFiredOnMoveEvent = true;
-                        MoveChara.this.posCol = toCol;
-                        MoveChara.this.posRow = toRow;
-                        if (onSelfMove != null) {
-                            onSelfMove.accept(MoveChara.this);
-                        }
+            @Override
+            protected void interpolate(double frac) {
+                MoveChara.this.drawnX = fromX + (toX - fromX) * frac;
+                MoveChara.this.drawnY = fromY + (toY - fromY) * frac;
+
+                if (frac > 0.5 && !isFiredOnMoveEvent) {
+                    isFiredOnMoveEvent = true;
+                    MoveChara.this.posCol = toCol;
+                    MoveChara.this.posRow = toRow;
+                    if (onSelfMove != null) {
+                        onSelfMove.accept(MoveChara.this);
                     }
                 }
-            };
+            }
+        };
 
-            this.moveTransition.play();
-            return true;
-        } else {
-            return false;
-        }
+        this.moveTransition.play();
     }
 
     public Animation.Status getMoveTransitionStatus() {

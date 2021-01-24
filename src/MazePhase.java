@@ -38,6 +38,7 @@ public class MazePhase implements Phase {
     private final AudioClip goalSE;
 
     private boolean isFeverMode = false;
+    private boolean hasGoaled = false;
 
     private final MessageArea guideMessage;
 
@@ -47,6 +48,8 @@ public class MazePhase implements Phase {
     private final boolean[] isKeyPushed;
 
     private final DrawableExecutor topLayerDrawable;
+
+    private GoalResultPanel goalResultPanel = null;
 
     public MazePhase() {
         this.mapData = new MapData(21, 15);
@@ -90,6 +93,7 @@ public class MazePhase implements Phase {
     @Override
     public void setup(MapGameScene scene) {
         this.scene = scene;
+        this.scene.getOtherComponents().getChildren().clear();
         this.scene.setOnKeyPressed(this::keyPressedAction);
         this.scene.setOnKeyReleased(this::keyReleasedAction);
         this.normalBGM.play();
@@ -101,6 +105,7 @@ public class MazePhase implements Phase {
     public void tearDown() {
         this.scene.setOnKeyPressed(null);
         this.scene.setOnKeyReleased(null);
+        this.scene.getOtherComponents().getChildren().clear();
     }
 
     @Override
@@ -140,6 +145,10 @@ public class MazePhase implements Phase {
 
         this.drawScore(gc);
         this.guideMessage.draw(gc);
+
+        if (this.goalResultPanel != null) {
+            this.goalResultPanel.draw(gc);
+        }
     }
 
     private void clipHoles(GraphicsContext gc, Circle... holes) {
@@ -268,18 +277,36 @@ public class MazePhase implements Phase {
 
     public void goalAction() {
         this.isPlayerControllable = false;
+        this.hasGoaled = true;
         this.normalBGM.stop();
         this.feverBGM.stop();
         this.goalSE.play();
 
-        TimerTask gotoNextMazeTask = new TimerTask() {
+        new TaskScheduleTimer(2000) {
             @Override
-            public void run() {
-                createAndGotoNextMaze();
-            }
-        };
+            public void task() {
+                goalResultPanel = new GoalResultPanel("GOAL!", 57, score, scene);
+                goalResultPanel.getBtnNewMap().setOnMouseClicked(event -> createAndGotoNextMaze());
 
-        new Timer().schedule(gotoNextMazeTask, 2000);
+                final int fromY = -1 * goalResultPanel.getHeight();
+                final int toY = (mapView.getMapHeight() - goalResultPanel.getHeight()) / 2 + mapView.getMapTopY();
+
+                goalResultPanel.setX((mapView.getMapWidth() - goalResultPanel.getWidth()) / 2);
+                goalResultPanel.setY(fromY);
+
+                new Transition() {
+                    {
+                        setCycleDuration(Duration.millis(1000));
+                    }
+
+                    @Override
+                    protected void interpolate(double frac) {
+                        final double k = Easing.easeOutBounce(frac);
+                        goalResultPanel.setY((int) (fromY + (toY - fromY) * k));
+                    }
+                }.play();
+            }
+        }.start();
     }
 
     private void drawScore(GraphicsContext gc) {
@@ -354,6 +381,7 @@ public class MazePhase implements Phase {
             new TaskScheduleTimer(i * 80L) {
                 @Override
                 public void task() {
+                    if (hasGoaled) return;
                     mapData.setItemType(pos.col, pos.row, ItemType.COIN);
                     coinPutSE.play();
                 }
@@ -388,6 +416,7 @@ public class MazePhase implements Phase {
         new TaskScheduleTimer(FEVER_KEEP_TIME_MILLI) {
             @Override
             public void task() {
+                if (hasGoaled) return;
                 normalBGM.play();
                 feverBGM.stop();
                 isFeverMode = false;
