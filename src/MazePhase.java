@@ -46,7 +46,7 @@ public class MazePhase implements Phase {
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
         this.player.setOnMoveHandler(this::onPlayerMoved);
         this.blindHollowAtPlayer = new Circle(mapView.getCellSize() * 3);
-        this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
+        this.bombExecutor = new BombExecutor(mapView);
 
         this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
         this.bgm.setVolume(0.3);
@@ -119,7 +119,7 @@ public class MazePhase implements Phase {
             }
             mapView.draw(gc);
             player.draw(gc, mapView);
-            this.bombExecutor.draw(gc, mapView);
+            this.bombExecutor.draw(gc);
         }
         gc.restore();
 
@@ -191,7 +191,7 @@ public class MazePhase implements Phase {
         this.coinSE.play();
 
         registerScoreTextFloatAnimation(ItemType.COIN.getScore(),
-                mapView.getCellDrawX(col), mapView.getCellDrawY(row),
+                mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
                 this.topLayerDrawable);
     }
 
@@ -207,7 +207,7 @@ public class MazePhase implements Phase {
         }
 
         registerScoreTextFloatAnimation(ItemType.KEY.getScore(),
-                mapView.getCellDrawX(col), mapView.getCellDrawY(row),
+                mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
                 this.topLayerDrawable);
     }
 

@@ -27,22 +27,21 @@ public class MoveChara {
 
     private final MapData mapData;
 
-    // TODO MapView ではなく interface にする
-    private final MapView mapView;
+    private final CellDrawnPositionResolver positionResolver;
 
     private final ImageFrameAnimation[] charaAnimations;
 
     private Consumer<MoveChara> onSelfMove = null;
 
-    public MoveChara(int startCol, int startRow, MapData mapData, MapView mapView) {
+    public MoveChara(int startCol, int startRow, MapData mapData, CellDrawnPositionResolver positionResolver) {
         this.posCol = startCol;
         this.posRow = startRow;
         this.mapData = mapData;
-        this.mapView = mapView;
+        this.positionResolver = positionResolver;
         System.out.println("new MoveChara: col=" + posCol + ", row=" + posRow);
 
-        this.drawnX = mapView.getCellDrawX(this.posCol);
-        this.drawnY = mapView.getCellDrawY(this.posRow);
+        this.drawnX = positionResolver.getCellDrawnX(this.posCol);
+        this.drawnY = positionResolver.getCellDrawnY(this.posRow);
         this.moveTransition = new Transition() {
             @Override
             protected void interpolate(double frac) {
@@ -66,8 +65,8 @@ public class MoveChara {
         this.setCharaDirection(TYPE_RIGHT);
     }
 
-    public void draw(GraphicsContext gc, MapView mapView) {
-        final int cellSize = mapView.getCellSize();
+    public void draw(GraphicsContext gc) {
+        final int cellSize = positionResolver.getCellSize();
         this.charaAnimations[this.charaDirection].draw(gc, this.drawnX, this.drawnY, cellSize, cellSize);
     }
 
@@ -105,10 +104,10 @@ public class MoveChara {
         if (isMovableBy(dx, dy)) {
             final int toCol = this.posCol + dx;
             final int toRow = this.posRow + dy;
-            final double fromX = this.mapView.getCellDrawX(this.posCol);
-            final double fromY = this.mapView.getCellDrawY(this.posRow);
-            final double toX = this.mapView.getCellDrawX(toCol);
-            final double toY = this.mapView.getCellDrawY(toRow);
+            final double fromX = this.positionResolver.getCellDrawnX(this.posCol);
+            final double fromY = this.positionResolver.getCellDrawnY(this.posRow);
+            final double toX = this.positionResolver.getCellDrawnX(toCol);
+            final double toY = this.positionResolver.getCellDrawnY(toRow);
 
             this.moveTransition = new Transition() {
                 private boolean isFiredOnMoveEvent = false;
