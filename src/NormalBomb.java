@@ -2,7 +2,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.media.AudioClip;
 
-public class Bomb {
+public class NormalBomb {
     private static final SpriteSheet bombSpriteSheet = new SpriteSheet(new Image("png/black-bomb-spritesheet.png"), 4, 1);
     private static final AudioClip explosionSE = new AudioClip(MapGame.getResourceAsString("sound/explosion.wav"));
 
@@ -10,14 +10,14 @@ public class Bomb {
     public final int row;
 
     public final ImageFrameAnimation bombAnimation;
-    protected Bomb(int col, int row, SpriteSheet bombSpriteSheet) {
+    protected NormalBomb(int col, int row, SpriteSheet bombSpriteSheet) {
         this.col = col;
         this.row = row;
         this.bombAnimation = new ImageFrameAnimation(bombSpriteSheet, 1000, ImageFrameAnimation.Direction.REVERSE);
     }
 
-    public Bomb(int col, int row) {
-        this(col, row, Bomb.bombSpriteSheet);
+    public NormalBomb(int col, int row) {
+        this(col, row, NormalBomb.bombSpriteSheet);
     }
 
     public void startCountDown() {

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 public class BombExecutor {
-    private final List<Bomb> bombList;
+    private final List<NormalBomb> bombList;
     private final DrawableExecutor explosionAnimExecutor;
     private final CellDrawnPositionResolver positionResolver;
 
@@ -15,13 +15,9 @@ public class BombExecutor {
         this.positionResolver = positionResolver;
     }
 
-    public void register(Bomb bomb) {
+    public void register(NormalBomb bomb) {
         this.bombList.add(bomb);
         bomb.startCountDown();
-    }
-
-    public void registerNewBomb(int col, int row) {
-        this.register(new Bomb(col, row));
     }
 
     public int countBomb() {
@@ -33,9 +29,9 @@ public class BombExecutor {
     }
 
     public void update(MapData mapData) {
-        ListIterator<Bomb> itr = bombList.listIterator();
+        ListIterator<NormalBomb> itr = bombList.listIterator();
         while (itr.hasNext()) {
-            final Bomb bomb = itr.next();
+            final NormalBomb bomb = itr.next();
             if (bomb.hasExploded()) {
                 bomb.explode(mapData, this.positionResolver, this.explosionAnimExecutor);
                 bomb.playExplosionSE();

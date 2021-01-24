@@ -305,7 +305,7 @@ public class MazePhase implements Phase {
         if (bombExecutor.countBomb() >= 3) {
             return;
         }
-        bombExecutor.registerNewBomb(player.getPosCol(), player.getPosRow());
+        bombExecutor.register(new GoldBomb(player.getPosCol(), player.getPosRow()));
     }
 
     public void putCoinTrailToGoal() {
