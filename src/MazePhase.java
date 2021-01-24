@@ -1,8 +1,11 @@
 import javafx.animation.Animation;
+import javafx.animation.Transition;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
@@ -13,22 +16,28 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class MazePhase implements Phase {
+    private static final Duration playerNormalMoveDuration = Duration.millis(250);
+    private static final Duration playerFeverMoveDuration = Duration.millis(150);
+    private static final long FEVER_KEEP_TIME_MILLI = 15 * 1000;
     private MapGameScene scene;
 
     private final MapData mapData;
     private final MapView mapView;
     private final MoveChara player;
-    private final Duration playerMoveDuration = Duration.millis(200);
+    private Duration playerMoveDuration = playerNormalMoveDuration;
 
     private final Circle blindHollowAtPlayer;
     private boolean isBlindEnabled = true;
 
     private final BombExecutor bombExecutor;
 
-    private final AudioClip bgm;
+    private final MediaPlayer normalBGM;
+    private final MediaPlayer feverBGM;
     private final AudioClip coinSE;
     private final AudioClip keySE;
     private final AudioClip goalSE;
+
+    private boolean isFeverMode = false;
 
     private final MessageArea guideMessage;
 
@@ -46,11 +55,15 @@ public class MazePhase implements Phase {
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
         this.player.setOnMoveHandler(this::onPlayerMoved);
         this.blindHollowAtPlayer = new Circle(mapView.getCellSize() * 3);
-        this.bombExecutor = new BombExecutor(new AudioClip(MapGame.getResourceAsString("sound/explosion.wav")));
+        this.bombExecutor = new BombExecutor(mapView);
 
-        this.bgm = new AudioClip(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3"));
-        this.bgm.setVolume(0.3);
-        this.bgm.setCycleCount(AudioClip.INDEFINITE);
+        this.normalBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3")));
+        this.normalBGM.setVolume(0.3);
+        this.normalBGM.setCycleCount(AudioClip.INDEFINITE);
+
+        this.feverBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/bgm-fever.mp3")));
+        this.feverBGM.setVolume(0.3);
+        this.feverBGM.setCycleCount(AudioClip.INDEFINITE);
 
         this.coinSE = new AudioClip(MapGame.getResourceAsString("sound/coin1.wav"));
         this.keySE = new AudioClip(MapGame.getResourceAsString("sound/se_maoudamashii_system46.mp3"));
@@ -79,7 +92,7 @@ public class MazePhase implements Phase {
         this.scene = scene;
         this.scene.setOnKeyPressed(this::keyPressedAction);
         this.scene.setOnKeyReleased(this::keyReleasedAction);
-        this.bgm.play();
+        this.normalBGM.play();
 
         this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 を開けよう！");
     }
@@ -112,14 +125,14 @@ public class MazePhase implements Phase {
     public void draw(GraphicsContext gc) {
         gc.save();
         {
-            if (this.isBlindEnabled) {
+            if (this.isBlindEnabled && this.blindHollowAtPlayer.getRadius() < this.mapView.getMapWidth()) {
                 gc.setFill(Color.BLACK);
                 gc.fillRect(mapView.getMapLeftX(), mapView.getMapTopY(), mapView.getMapWidth(), mapView.getMapHeight());
                 clipHoles(gc, blindHollowAtPlayer);
             }
             mapView.draw(gc);
-            player.draw(gc, mapView);
-            this.bombExecutor.draw(gc, mapView);
+            player.draw(gc);
+            this.bombExecutor.draw(gc);
         }
         gc.restore();
 
@@ -172,12 +185,13 @@ public class MazePhase implements Phase {
             case ESCAPE:
                 this.isBlindEnabled = !this.isBlindEnabled;
                 break;
+            case ENTER:
+                this.enterFeverMode();
         }
     }
 
     public void itemGetAction(int col, int row) {
         final ItemType itemType = this.mapData.getItemType(col, row);
-        this.score += itemType.getScore();
         this.mapData.setItemType(col, row, ItemType.NONE);
 
         if (itemType == ItemType.COIN) {
@@ -187,17 +201,26 @@ public class MazePhase implements Phase {
         }
     }
 
-    private void coinGetAction(int col, int row) {
-        this.coinSE.play();
+    private double getFeverBonusRate() {
+        if (isFeverMode) {
+            return 1.5;
+        } else {
+            return 1.0;
+        }
+    }
 
-        registerScoreTextFloatAnimation(ItemType.COIN.getScore(),
-                mapView.getCellDrawX(col), mapView.getCellDrawY(row),
-                this.topLayerDrawable);
+    private void coinGetAction(int col, int row) {
+        final int score = (int) (ItemType.COIN.getScore() * getFeverBonusRate());
+        this.score += score;
+
+        registerScoreTextFloatAnimation(score,
+                mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
+                this.topLayerDrawable, isFeverMode);
+
+        this.coinSE.play();
     }
 
     private void keyGetAction(int col, int row) {
-        this.keySE.play();
-
         if (mapData.countExistingKeys() <= 0) {
             this.mapData.setGoalOpen(true);
             this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 が開いた！");
@@ -206,18 +229,23 @@ public class MazePhase implements Phase {
             this.guideMessage.setMessage("カギを拾った！ のこり " + n + " つ！");
         }
 
-        registerScoreTextFloatAnimation(ItemType.KEY.getScore(),
-                mapView.getCellDrawX(col), mapView.getCellDrawY(row),
-                this.topLayerDrawable);
+        final int score = (int) (ItemType.KEY.getScore() * getFeverBonusRate());
+        this.score += score;
+
+        registerScoreTextFloatAnimation(score,
+                mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
+                this.topLayerDrawable, isFeverMode);
+
+        this.keySE.play();
     }
 
-    private static void registerScoreTextFloatAnimation(int score, int x, int y, DrawableExecutor drawableExecutor) {
+    private static void registerScoreTextFloatAnimation(int score, int x, int y, DrawableExecutor drawableExecutor, boolean isFeverMode) {
         drawableExecutor.registerAndPlay(new TextFloatUpAnimation(
                 "+" + score,
                 x, y,
-                Font.font("sans-serif", FontWeight.BLACK, 18),
+                Font.font("sans-serif", FontWeight.BLACK, isFeverMode ? 24 : 18),
                 Color.WHITE,
-                Color.DARKORANGE,
+                isFeverMode ? Color.BLUE : Color.DARKORANGE,
                 Duration.millis(800),
                 24
         ));
@@ -239,9 +267,9 @@ public class MazePhase implements Phase {
     }
 
     public void goalAction() {
-        System.out.println("Goal!!!!!!!!!!!!!!!!!");
         this.isPlayerControllable = false;
-        this.bgm.stop();
+        this.normalBGM.stop();
+        this.feverBGM.stop();
         this.goalSE.play();
 
         TimerTask gotoNextMazeTask = new TimerTask() {
@@ -302,10 +330,14 @@ public class MazePhase implements Phase {
         if (bombExecutor.isExistsBombAt(player.getPosCol(), player.getPosRow())) {
             return;
         }
-        if (bombExecutor.countBomb() >= 3) {
-            return;
+
+        if (this.isFeverMode) {
+            if (bombExecutor.countBomb() >= 5) return;
+            bombExecutor.register(new GoldBomb(player.getPosCol(), player.getPosRow()));
+        } else {
+            if (bombExecutor.countBomb() >= 3) return;
+            bombExecutor.register(new NormalBomb(player.getPosCol(), player.getPosRow()));
         }
-        bombExecutor.registerNewBomb(player.getPosCol(), player.getPosRow());
     }
 
     public void putCoinTrailToGoal() {
@@ -314,22 +346,66 @@ public class MazePhase implements Phase {
                 mapData.getWidth(), mapData.getHeight(),
                 pos -> mapData.getCellType(pos.col, pos.row).isMovable());
 
-        Timer timer = new Timer();
-
         final AudioClip coinPutSE = new AudioClip(MapGame.getResourceAsString("sound/coin8.wav"));
 
         int i = 0;
         for (Pos pos : path) {
             if (mapData.getItemType(pos.col, pos.row) != ItemType.NONE) continue;
-            timer.schedule(new TimerTask() {
+            new TaskScheduleTimer(i * 80L) {
                 @Override
-                public void run() {
+                public void task() {
                     mapData.setItemType(pos.col, pos.row, ItemType.COIN);
                     coinPutSE.play();
                 }
-            }, i * 80);
+            }.start();
             ++i;
         }
+    }
+
+    public void enterFeverMode() {
+        if (this.isFeverMode) return;
+
+        this.normalBGM.pause();
+        this.feverBGM.play();
+        isFeverMode = true;
+        this.playerMoveDuration = playerFeverMoveDuration;
+
+        final double initRadius = this.blindHollowAtPlayer.getRadius();
+        final double targetRadius = this.mapView.getMapWidth() * 2;
+
+        new Transition() {
+            {
+                setCycleDuration(Duration.millis(1000));
+            }
+
+            @Override
+            protected void interpolate(double frac) {
+                final double r = initRadius + (targetRadius - initRadius) * frac;
+                blindHollowAtPlayer.setRadius(r);
+            }
+        }.play();
+
+        new TaskScheduleTimer(FEVER_KEEP_TIME_MILLI) {
+            @Override
+            public void task() {
+                normalBGM.play();
+                feverBGM.stop();
+                isFeverMode = false;
+                playerMoveDuration = playerNormalMoveDuration;
+
+                new Transition() {
+                    {
+                        setCycleDuration(Duration.millis(1000));
+                    }
+
+                    @Override
+                    protected void interpolate(double frac) {
+                        final double r = targetRadius + (initRadius - targetRadius) * frac;
+                        blindHollowAtPlayer.setRadius(r);
+                    }
+                }.play();
+            }
+        }.start();
     }
 
     /**
@@ -343,7 +419,7 @@ public class MazePhase implements Phase {
      * @return start から goal までの最短ルート
      */
     public static List<Pos> calcShortestPath(Pos start, Pos goal, int ncol, int nrow, Predicate<Pos> canBeTrail) {
-        final int directions[] = {0, 1, -1, 0};
+        final int[] directions = {0, 1, -1, 0};
 
         Queue<Pos> que = new ArrayDeque<>();
 

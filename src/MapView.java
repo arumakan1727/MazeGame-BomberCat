@@ -1,9 +1,9 @@
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
-public class MapView {
-    private MapData mapData;
-    private MapSkin mapSkin;
+public class MapView implements CellDrawnPositionResolver {
+    private final MapData mapData;
+    private final MapSkin mapSkin;
     private int mapLeftX = 0;
     private int mapTopY = 0;
     private int cellSize;
@@ -56,8 +56,8 @@ public class MapView {
             for (int col = 0; col < ncol; ++col) {
                 final var cellType = this.mapData.getCellType(col, row);
                 final var cellImage = this.mapSkin.getCellImage(cellType);
-                final int x = this.getCellDrawX(col);
-                final int y = this.getCellDrawY(row);
+                final int x = this.getCellDrawnX(col);
+                final int y = this.getCellDrawnY(row);
                 gc.drawImage(cellImage, x, y, this.cellSize, this.cellSize);
             }
         }
@@ -66,8 +66,8 @@ public class MapView {
     private void drawGoal(GraphicsContext gc) {
         final int goalCol = mapData.getGoalX();
         final int goalRow = mapData.getGoalY();
-        final int x = this.getCellDrawX(goalCol);
-        final int y = this.getCellDrawY(goalRow);
+        final int x = this.getCellDrawnX(goalCol);
+        final int y = this.getCellDrawnY(goalRow);
 
         if (mapData.isGoalOpen()) {
             gc.drawImage(openedGoalImage, x, y, this.cellSize, this.cellSize);
@@ -85,62 +85,51 @@ public class MapView {
                 final var itemType = this.mapData.getItemType(col, row);
 
                 if (itemType == ItemType.KEY) {
-                    final int x = this.getCellDrawX(col);
-                    final int y = this.getCellDrawY(row);
+                    final int x = this.getCellDrawnX(col);
+                    final int y = this.getCellDrawnY(row);
                     this.doorKeyView.draw(gc, x, y, this.cellSize, this.cellSize);
                 } else if (itemType == ItemType.COIN) {
                     final int coinSize = (int) (this.cellSize * 0.7);
                     final int offset = (this.cellSize - coinSize) / 2;
-                    final int x = this.getCellDrawX(col) + offset;
-                    final int y = this.getCellDrawY(row) + offset;
+                    final int x = this.getCellDrawnX(col) + offset;
+                    final int y = this.getCellDrawnY(row) + offset;
                     this.coinView.draw(gc, x, y, coinSize, coinSize);
                 }
             }
         }
     }
 
-    public int getCellDrawX(int col) {
+    @Override
+    public int getCellDrawnX(int col) {
         return this.mapLeftX + (this.cellSize * col);
     }
 
-    public int getCellDrawY(int row) {
+    @Override
+    public int getCellDrawnY(int row) {
         return this.mapTopY + (this.cellSize * row);
     }
 
-    public MapData getMapData() {
-        return mapData;
-    }
-
-    public void setMapData(MapData mapData) {
-        this.mapData = mapData;
-    }
-
-    public MapSkin getMapSkin() {
-        return mapSkin;
-    }
-
-    public void setMapSkin(MapSkin mapSkin) {
-        this.mapSkin = mapSkin;
-    }
-
+    @Override
     public int getCellSize() {
         return cellSize;
+    }
+
+    @Override
+    public int getMapTopY() {
+        return mapTopY;
+    }
+
+    @Override
+    public int getMapLeftX() {
+        return mapLeftX;
     }
 
     public void setCellSize(int cellSize) {
         this.cellSize = cellSize;
     }
 
-    public int getMapLeftX() {
-        return mapLeftX;
-    }
-
     public void setMapLeftX(int mapLeftX) {
         this.mapLeftX = mapLeftX;
-    }
-
-    public int getMapTopY() {
-        return mapTopY;
     }
 
     public void setMapTopY(int mapTopY) {
