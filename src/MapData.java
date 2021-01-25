@@ -285,6 +285,10 @@ public class MapData {
         return count;
     }
 
+    public int countRemovedKeys() {
+        return 3 - countExistingKeys();
+    }
+
     /**
      * TODO 必須2 ゴールの配置
      */

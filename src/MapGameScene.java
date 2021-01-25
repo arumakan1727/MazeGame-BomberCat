@@ -42,13 +42,13 @@ public class MapGameScene extends Scene {
             }
         };
 
-        this.phase.setup(this);
+        this.phase.setup();
         gameLoopTimer.start();
     }
 
     public void changePhase(Phase nextPhase) {
         this.phase.tearDown();
-        nextPhase.setup(this);
+        nextPhase.setup();
         this.phase = nextPhase;
     }
 

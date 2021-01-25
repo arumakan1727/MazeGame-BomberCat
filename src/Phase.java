@@ -1,7 +1,7 @@
 import javafx.scene.canvas.GraphicsContext;
 
 public interface Phase {
-    void setup(MapGameScene scene);
+    void setup();
 
     void tearDown();
 
