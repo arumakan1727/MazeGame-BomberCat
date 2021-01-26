@@ -334,6 +334,10 @@ public class MazePhase implements Phase {
             public void task() {
                 goalResultPanel = new GoalResultPanel("GOAL!", ((int) goalStopwatch.getCurTime().toSeconds()), headerPanel.getDrawnScore(), scene);
                 goalResultPanel.getBtnNewMap().setOnMouseClicked(event -> createAndGotoNextMaze());
+                goalResultPanel.getBtnToTitle().setOnMouseClicked(event -> {
+                    final Phase nextPhase = new TitlePhase(scene);
+                    scene.changePhase(nextPhase);
+                });
 
                 final int fromY = -1 * goalResultPanel.getHeight();
                 final int toY = (mapView.getMapHeight() - goalResultPanel.getHeight()) / 2 + mapView.getMapTopY();
