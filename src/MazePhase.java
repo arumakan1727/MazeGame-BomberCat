@@ -484,7 +484,7 @@ public class MazePhase implements Phase {
 
     public void putCoinTrailToGoal() {
         this.btnCoinTrail.gageStartFromEmpty(gageDuration_coinTrail);
-        guideMessage.setMessage("ゴールコイン 発動！ コインの道が作られていく！");
+        guideMessage.setMessage("コインの小道 発動！ コインの道が作られていく！");
 
         final List<Pos> path = calcShortestPath(
                 this.player.getPos(), this.mapData.getGoalPos(),
