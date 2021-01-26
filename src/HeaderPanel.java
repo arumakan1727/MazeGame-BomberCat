@@ -52,7 +52,7 @@ public class HeaderPanel {
 
     private void drawKeys(GraphicsContext gc) {
         final int marginLeft = 10;
-        final int marginSide = 3;
+        final int marginSide = 5;
         final int keyBoxSize = 32;
         final int y = (this.height - keyBoxSize) / 2;
 
@@ -60,9 +60,9 @@ public class HeaderPanel {
             final int x = marginLeft + (keyBoxSize + marginSide) * i;
             gc.setFill(Color.SILVER);
             gc.setStroke(Color.PERU);
-            gc.setLineWidth(2);
-            gc.strokeRoundRect(x, y, keyBoxSize, keyBoxSize, 3, 3);
-            gc.fillRoundRect(x, y, keyBoxSize, keyBoxSize, 3, 3);
+            gc.setLineWidth(3);
+            gc.strokeRoundRect(x, y, keyBoxSize, keyBoxSize, 4, 4);
+            gc.fillRoundRect(x, y, keyBoxSize, keyBoxSize, 4, 4);
 
             if (i < gotKeyCount) {
                 gc.drawImage(keyImageActive, x, y, keyBoxSize, keyBoxSize);
