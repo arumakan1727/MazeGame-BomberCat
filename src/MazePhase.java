@@ -83,13 +83,6 @@ public class MazePhase implements Phase {
             this.btnFever = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-magic-circle.png"), scene));
             this.headerPanel.addCenterButton(this.btnCoinTrail);
             this.headerPanel.addCenterButton(this.btnFever);
-
-            this.btnCoinTrail.getButton().setOnMouseClicked(evt -> {
-                this.putCoinTrailToGoal();
-            });
-            this.btnFever.getButton().setOnMouseClicked(evt -> {
-                this.enterFeverMode();
-            });
             this.goalStopwatch.setTickHandler(elapsedTime -> headerPanel.setDrawnElapsedTime(((int) elapsedTime.toSeconds())));
         }
 
@@ -137,7 +130,20 @@ public class MazePhase implements Phase {
         scene.getOtherComponents().getChildren().addAll(this.btnCoinTrail.getButton(), this.btnFever.getButton());
         this.normalBGM.play();
 
-        this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 を開けよう！");
+        this.btnCoinTrail.getButton().setOnMouseClicked(evt -> {
+            this.putCoinTrailToGoal();
+        });
+        this.btnCoinTrail.setOnGageFilled(btn -> {
+            guideMessage.setMessage("コインの杖 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
+        });
+        this.btnFever.getButton().setOnMouseClicked(evt -> {
+            this.enterFeverMode();
+        });
+        this.btnFever.setOnGageFilled(btn -> {
+            guideMessage.setMessage("フィーバースター が使えるようになった！ [2]キー を押して フィーバー だ！");
+        });
+
+        this.guideMessage.setMessage("カギをすべて拾ってゴールの扉を開けよう！ スペースキーで爆弾を置けるぞ！");
         this.btnCoinTrail.gageStartFromEmpty(coinTrailGageDuration);
         this.btnFever.gageStartFromEmpty(feverGageDuration);
         this.goalStopwatch.start();
@@ -462,6 +468,7 @@ public class MazePhase implements Phase {
     public void enterFeverMode() {
         if (this.isFeverMode) return;
         this.btnFever.setGage(0.0);
+        guideMessage.setMessage("フィーバーモード！ スペースキーでゴールドボムが使えるぞ！");
 
         this.normalBGM.pause();
         this.feverBGM.play();

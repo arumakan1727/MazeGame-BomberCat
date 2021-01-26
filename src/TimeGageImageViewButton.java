@@ -3,10 +3,13 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.util.function.Consumer;
+
 public class TimeGageImageViewButton {
     private final ImageViewButton button;
     private double gage = 0.0;
     private Transition gageTransition;
+    private Consumer<TimeGageImageViewButton> onGageFilled = null;
 
     public TimeGageImageViewButton(ImageViewButton button) {
         this.button = button;
@@ -34,6 +37,9 @@ public class TimeGageImageViewButton {
 
         this.gageTransition.setOnFinished(evt -> {
             setGage(1.0);
+            if (onGageFilled != null) {
+                onGageFilled.accept(TimeGageImageViewButton.this);
+            }
         });
 
         this.gageTransition.play();
@@ -74,5 +80,9 @@ public class TimeGageImageViewButton {
 
     public double getHeight() {
         return button.getImage().getHeight();
+    }
+
+    public void setOnGageFilled(Consumer<TimeGageImageViewButton> onGageFilled) {
+        this.onGageFilled = onGageFilled;
     }
 }
