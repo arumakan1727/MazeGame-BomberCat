@@ -87,8 +87,8 @@ public class MazePhase implements Phase {
         this.bombExecutor = new BombExecutor(mapView);
 
         {
-            this.normalBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3")));
-            this.normalBGM.setVolume(0.3);
+            this.normalBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/digitalworld.mp3")));
+            this.normalBGM.setVolume(0.4);
             this.normalBGM.setCycleCount(AudioClip.INDEFINITE);
 
             this.feverBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/bgm-fever.mp3")));
@@ -334,6 +334,10 @@ public class MazePhase implements Phase {
             public void task() {
                 goalResultPanel = new GoalResultPanel("GOAL!", ((int) goalStopwatch.getCurTime().toSeconds()), headerPanel.getDrawnScore(), scene);
                 goalResultPanel.getBtnNewMap().setOnMouseClicked(event -> createAndGotoNextMaze());
+                goalResultPanel.getBtnToTitle().setOnMouseClicked(event -> {
+                    final Phase nextPhase = new TitlePhase(scene);
+                    scene.changePhase(nextPhase);
+                });
 
                 final int fromY = -1 * goalResultPanel.getHeight();
                 final int toY = (mapView.getMapHeight() - goalResultPanel.getHeight()) / 2 + mapView.getMapTopY();

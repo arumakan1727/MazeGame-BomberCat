@@ -12,7 +12,7 @@ public class MapGame extends Application {
         primaryStage.setScene(myScene);
         primaryStage.show();
 
-        myScene.startGame(new MazePhase(myScene));
+        myScene.startGame(new TitlePhase(myScene));
     }
 
     public static void main(String[] args) {
