@@ -62,12 +62,12 @@ public class TitlePhase implements Phase {
 
     private void alignTitleLogo() {
         titleLogo.setLayoutX((scene.getWidth() - titleLogo.getImage().getWidth()) / 2);
-        titleLogo.setLayoutY(scene.getHeight() * 0.2);
+        titleLogo.setLayoutY(scene.getHeight() * 0.1);
     }
 
     private void alignButtons() {
         btnPlay.setLayoutX((scene.getWidth() - btnPlay.getImage().getWidth()) / 2);
-        btnPlay.setLayoutY(scene.getHeight() / 2);
+        btnPlay.setLayoutY(scene.getHeight() * 0.60);
         btnExit.setLayoutX((scene.getWidth() - btnPlay.getImage().getWidth()) / 2);
         btnExit.setLayoutY(btnPlay.getLayoutY() + btnPlay.getImage().getHeight() * 2);
     }
