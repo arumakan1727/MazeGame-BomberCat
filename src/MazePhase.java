@@ -451,9 +451,11 @@ public class MazePhase implements Phase {
 
         final AudioClip coinPutSE = new AudioClip(MapGame.getResourceAsString("sound/coin8.wav"));
 
-        int i = 0;
-        for (Pos pos : path) {
+        for (int i = 0; i < path.size(); i++) {
+            final Pos pos = path.get(i);
             if (mapData.getItemType(pos.col, pos.row) != ItemType.NONE) continue;
+            if (i == 0 || i == path.size() - 1) continue;
+
             new TaskScheduleTimer(i * 80L) {
                 @Override
                 public void task() {
@@ -462,7 +464,6 @@ public class MazePhase implements Phase {
                     coinPutSE.play();
                 }
             }.start();
-            ++i;
         }
     }
 
