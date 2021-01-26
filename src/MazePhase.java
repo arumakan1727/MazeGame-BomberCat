@@ -79,7 +79,7 @@ public class MazePhase implements Phase {
         this.mapView.setMapTopY(HEADER_PANEL_HEIGHT);
         {
             this.headerPanel = new HeaderPanel(0, 0, mapView.getMapWidth(), HEADER_PANEL_HEIGHT);
-            this.btnCoinTrail = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-coin-rod.png"), scene));
+            this.btnCoinTrail = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-coin-to-goal.png"), scene));
             this.btnFever = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-magic-circle.png"), scene));
             this.headerPanel.addCenterButton(this.btnCoinTrail);
             this.headerPanel.addCenterButton(this.btnFever);
@@ -134,7 +134,7 @@ public class MazePhase implements Phase {
             this.putCoinTrailToGoal();
         });
         this.btnCoinTrail.setOnGageFilled(btn -> {
-            guideMessage.setMessage("コインの杖 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
+            guideMessage.setMessage("コインの小道 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
         });
         this.btnFever.getButton().setOnMouseClicked(evt -> {
             this.enterFeverMode();
@@ -442,6 +442,7 @@ public class MazePhase implements Phase {
 
     public void putCoinTrailToGoal() {
         this.btnCoinTrail.gageStartFromEmpty(coinTrailGageDuration);
+        guideMessage.setMessage("ゴールコイン発動！ コインの道が作られていく！");
 
         final List<Pos> path = calcShortestPath(
                 this.player.getPos(), this.mapData.getGoalPos(),
