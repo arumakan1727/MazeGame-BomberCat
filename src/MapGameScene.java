@@ -5,18 +5,16 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 
 public class MapGameScene extends Scene {
-    private static final int WIDTH = 860;
-    private static final int HEIGHT = 640;
-
     private final Canvas canvas;
     private final Group otherComponents;
     private Phase phase;
 
     private MapGameScene(Pane root) {
         super(root);
-        this.canvas = new Canvas(WIDTH, HEIGHT);
+        this.canvas = new Canvas(MazePhase.getScreenWidth(), MazePhase.getScreenHeight());
         this.otherComponents = new Group();
         root.getChildren().add(this.canvas);
         root.getChildren().add(this.otherComponents);
@@ -44,6 +42,9 @@ public class MapGameScene extends Scene {
 
         this.phase.setup();
         gameLoopTimer.start();
+
+        final Stage stage = (Stage) (this.getWindow());
+        stage.setResizable(false);
     }
 
     public void changePhase(Phase nextPhase) {

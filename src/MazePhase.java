@@ -17,6 +17,19 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class MazePhase implements Phase {
+    private static final int HEADER_PANEL_HEIGHT = 56;
+    private static final int GUIDE_MESSAGE_AREA_HEIGHT = 28;
+    private static final int MAZE_AREA_WIDTH = 32 * 21;
+    private static final int MAZE_AREA_HEIGHT = 32 * 15;
+
+    public static int getScreenHeight() {
+        return HEADER_PANEL_HEIGHT + MAZE_AREA_HEIGHT + GUIDE_MESSAGE_AREA_HEIGHT;
+    }
+
+    public static int getScreenWidth() {
+        return MAZE_AREA_WIDTH;
+    }
+
     private static final Duration playerNormalMoveDuration = Duration.millis(250);
     private static final Duration playerFeverMoveDuration = Duration.millis(120);
     private static final long FEVER_KEEP_TIME_MILLI = 15 * 1000;
@@ -59,7 +72,6 @@ public class MazePhase implements Phase {
     private final TimeGageImageViewButton btnFever;
 
     public MazePhase(MapGameScene scene) {
-        final int HEADER_PANEL_HEIGHT = 56;
         this.scene = scene;
         this.goalStopwatch = new Stopwatch(Duration.millis(500));
         this.mapData = new MapData(21, 15);
@@ -101,7 +113,7 @@ public class MazePhase implements Phase {
         }
 
         final Font pixelFont = Font.loadFont(MapGame.getResourceAsString("font/PixelMplus12-Regular.ttf"), 16);
-        this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), 28, pixelFont);
+        this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), GUIDE_MESSAGE_AREA_HEIGHT, pixelFont);
 
         this.isKeyPushed = new boolean[KeyCode.values().length];
 
