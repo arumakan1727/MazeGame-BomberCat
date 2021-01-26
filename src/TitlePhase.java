@@ -4,6 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.media.AudioClip;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 public class TitlePhase implements Phase {
@@ -18,7 +19,7 @@ public class TitlePhase implements Phase {
         this.titleLogo = new ImageView("png/title-logo.png");
         this.btnPlay = new ImageViewButton(new Image("png/button-play.png"), scene);
         this.btnExit = new ImageViewButton(new Image("png/button-exit.png"), scene);
-        this.bgm = new AudioClip(MapGame.getResourceAsString("sound/distantfuture.mp3"));
+        this.bgm = new AudioClip(MapGame.getResourceAsString("sound/title-bgm.mp3"));
         this.bgm.setCycleCount(AudioClip.INDEFINITE);
     }
 
@@ -44,7 +45,8 @@ public class TitlePhase implements Phase {
 
     @Override
     public void draw(GraphicsContext gc) {
-
+        gc.setFill(Color.PEACHPUFF);
+        gc.fillRect(0, 0, scene.getWidth(), scene.getHeight());
     }
 
     private void setButtonsClickHandler() {
@@ -62,7 +64,7 @@ public class TitlePhase implements Phase {
 
     private void alignTitleLogo() {
         titleLogo.setLayoutX((scene.getWidth() - titleLogo.getImage().getWidth()) / 2);
-        titleLogo.setLayoutY(scene.getHeight() * 0.1);
+        titleLogo.setLayoutY(scene.getHeight() * 0.3);
     }
 
     private void alignButtons() {
@@ -74,7 +76,7 @@ public class TitlePhase implements Phase {
 
     private void setAnimationToTitleLogo() {
         final double fromSize = 0.05;
-        final double toSize = 0.8;
+        final double toSize = 1.0;
 
         // titleLogo のサイズを 小 → 大へ、弾力を持った変化でアニメーションする
         final Transition elasticTransition = new Transition() {
