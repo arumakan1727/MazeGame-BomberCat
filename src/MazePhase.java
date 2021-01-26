@@ -18,12 +18,13 @@ import java.util.function.Predicate;
 
 public class MazePhase implements Phase {
     private static final Duration playerNormalMoveDuration = Duration.millis(250);
-    private static final Duration playerFeverMoveDuration = Duration.millis(150);
+    private static final Duration playerFeverMoveDuration = Duration.millis(120);
     private static final long FEVER_KEEP_TIME_MILLI = 15 * 1000;
-    private static final Duration coinTrailGageDuration = Duration.seconds(10);
-    private static final Duration feverGageDuration = Duration.seconds(15);
+    private static final Duration coinTrailGageDuration = Duration.seconds(15);
+    private static final Duration feverGageDuration = Duration.seconds(20);
 
     private final MapGameScene scene;
+    private final Stopwatch goalStopwatch;
 
     private final MapData mapData;
     private final MapView mapView;
