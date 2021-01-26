@@ -33,8 +33,9 @@ public class MazePhase implements Phase {
     private static final Duration playerNormalMoveDuration = Duration.millis(250);
     private static final Duration playerFeverMoveDuration = Duration.millis(120);
     private static final long FEVER_KEEP_TIME_MILLI = 15 * 1000;
-    private static final Duration coinTrailGageDuration = Duration.seconds(15);
-    private static final Duration feverGageDuration = Duration.seconds(20);
+    private static final Duration gageDuration_coinTrail = Duration.seconds(15);
+    private static final Duration gageDuration_fever = Duration.seconds(20);
+    private static final Duration gageDuration_collectCoins = Duration.seconds(5);
 
     private final MapGameScene scene;
     private final Stopwatch goalStopwatch;
@@ -69,6 +70,7 @@ public class MazePhase implements Phase {
 
     private GoalResultPanel goalResultPanel = null;
     private final TimeGageImageViewButton btnCoinTrail;
+    private final TimeGageImageViewButton btnCollectNeighborCoin;
     private final TimeGageImageViewButton btnFever;
 
     public MazePhase(MapGameScene scene) {
@@ -79,9 +81,13 @@ public class MazePhase implements Phase {
         this.mapView.setMapTopY(HEADER_PANEL_HEIGHT);
         {
             this.headerPanel = new HeaderPanel(0, 0, mapView.getMapWidth(), HEADER_PANEL_HEIGHT);
+
             this.btnCoinTrail = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-coin-to-goal.png"), scene));
+            this.btnCollectNeighborCoin = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-coin-rod.png"), scene));
             this.btnFever = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-magic-circle.png"), scene));
+
             this.headerPanel.addCenterButton(this.btnCoinTrail);
+            this.headerPanel.addCenterButton(this.btnCollectNeighborCoin);
             this.headerPanel.addCenterButton(this.btnFever);
             this.goalStopwatch.setTickHandler(elapsedTime -> headerPanel.setDrawnElapsedTime(((int) elapsedTime.toSeconds())));
         }
@@ -127,7 +133,7 @@ public class MazePhase implements Phase {
     public void setup() {
         this.scene.setOnKeyPressed(this::keyPressedAction);
         this.scene.setOnKeyReleased(this::keyReleasedAction);
-        scene.getOtherComponents().getChildren().addAll(this.btnCoinTrail.getButton(), this.btnFever.getButton());
+        scene.getOtherComponents().getChildren().addAll(this.btnCoinTrail.getButton(), this.btnCollectNeighborCoin.getButton(), this.btnFever.getButton());
         this.normalBGM.play();
 
         this.btnCoinTrail.getButton().setOnMouseClicked(evt -> {
@@ -136,16 +142,26 @@ public class MazePhase implements Phase {
         this.btnCoinTrail.setOnGageFilled(btn -> {
             guideMessage.setMessage("コインの小道 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
         });
+
+        this.btnCollectNeighborCoin.getButton().setOnMouseClicked(evt -> {
+            this.collectCoinsAroundPlayer(2);
+        });
+        this.btnCollectNeighborCoin.setOnGageFilled(btn -> {
+            guideMessage.setMessage("コインの杖 が使えるようになった！ [2]キー を押して周囲 2 マスのコインを一気にゲット！");
+        });
+
         this.btnFever.getButton().setOnMouseClicked(evt -> {
             this.enterFeverMode();
         });
         this.btnFever.setOnGageFilled(btn -> {
-            guideMessage.setMessage("フィーバースター が使えるようになった！ [2]キー を押して フィーバー だ！");
+            guideMessage.setMessage("フィーバースター が使えるようになった！ [3]キー を押して フィーバー だ！");
         });
 
         this.guideMessage.setMessage("カギをすべて拾ってゴールの扉を開けよう！ スペースキーで爆弾を置けるぞ！");
-        this.btnCoinTrail.gageStartFromEmpty(coinTrailGageDuration);
-        this.btnFever.gageStartFromEmpty(feverGageDuration);
+
+        this.btnCoinTrail.gageStartFromEmpty(gageDuration_coinTrail);
+        this.btnCollectNeighborCoin.gageStartFromEmpty(gageDuration_collectCoins);
+        this.btnFever.gageStartFromEmpty(gageDuration_fever);
         this.goalStopwatch.start();
     }
 
@@ -235,18 +251,28 @@ public class MazePhase implements Phase {
             case SPACE:
                 spaceButtonAction();
                 break;
+
             case DIGIT1:
                 if (isKeyPushed(KeyCode.SHIFT)) {
                     putCoinTrailToGoal();
                 } else {
-                    checkCoinTrailTrigger();
+                    requirePutCoinTrail();
                 }
                 break;
+
             case DIGIT2:
+                if (isKeyPushed(KeyCode.SHIFT)) {
+                    collectCoinsAroundPlayer(2);
+                } else {
+                    requireCollectCoinsAroundPlayer(2);
+                }
+                break;
+
+            case DIGIT3:
                 if (isKeyPushed(KeyCode.SHIFT)) {
                     this.enterFeverMode();
                 } else {
-                    checkEnterFeverModeTrigger();
+                    requireEnterFeverMode();
                 }
                 break;
             case ESCAPE:
@@ -259,12 +285,11 @@ public class MazePhase implements Phase {
 
     public void itemGetAction(int col, int row) {
         final ItemType itemType = this.mapData.getItemType(col, row);
-        this.mapData.setItemType(col, row, ItemType.NONE);
 
         if (itemType == ItemType.COIN) {
-            this.coinGetAction(col, row);
+            this.coinGetAction(col, row, true);
         } else if (itemType == ItemType.KEY) {
-            this.keyGetAction(col, row);
+            this.keyGetAction(col, row, true);
         }
     }
 
@@ -276,7 +301,9 @@ public class MazePhase implements Phase {
         }
     }
 
-    private void coinGetAction(int col, int row) {
+    private void coinGetAction(int col, int row, boolean playSE) {
+        this.mapData.setItemType(col, row, ItemType.NONE);
+
         final int score = (int) (ItemType.COIN.getScore() * getFeverBonusRate());
         this.headerPanel.addDrawnScore(score);
 
@@ -284,10 +311,14 @@ public class MazePhase implements Phase {
                 mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
                 this.topLayerDrawable, isFeverMode);
 
-        this.coinSE.play();
+        if (playSE) {
+            this.coinSE.play();
+        }
     }
 
-    private void keyGetAction(int col, int row) {
+    private void keyGetAction(int col, int row, boolean playSE) {
+        this.mapData.setItemType(col, row, ItemType.NONE);
+
         headerPanel.setGotKeyCount(mapData.countRemovedKeys());
 
         if (mapData.countExistingKeys() <= 0) {
@@ -305,7 +336,9 @@ public class MazePhase implements Phase {
                 mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
                 this.topLayerDrawable, isFeverMode);
 
-        this.keySE.play();
+        if (playSE) {
+            this.keySE.play();
+        }
     }
 
     private static void registerScoreTextFloatAnimation(int score, int x, int y, DrawableExecutor drawableExecutor, boolean isFeverMode) {
@@ -342,8 +375,11 @@ public class MazePhase implements Phase {
         this.normalBGM.stop();
         this.feverBGM.stop();
         this.goalSE.play();
+
         this.btnCoinTrail.getButton().setButtonEnabled(false);
         this.btnCoinTrail.pause();
+        this.btnCollectNeighborCoin.getButton().setButtonEnabled(false);
+        this.btnCollectNeighborCoin.pause();
         this.btnFever.getButton().setButtonEnabled(false);
         this.btnFever.pause();
 
@@ -428,21 +464,27 @@ public class MazePhase implements Phase {
         }
     }
 
-    private void checkCoinTrailTrigger() {
+    private void requirePutCoinTrail() {
         if (!btnCoinTrail.getButton().isButtonEnabled()) return;
         if (hasGoaled) return;
         putCoinTrailToGoal();
     }
 
-    private void checkEnterFeverModeTrigger() {
+    private void requireCollectCoinsAroundPlayer(int dist) {
+        if (!btnCollectNeighborCoin.getButton().isButtonEnabled()) return;
+        if (hasGoaled) return;
+        collectCoinsAroundPlayer(dist);
+    }
+
+    private void requireEnterFeverMode() {
         if (!btnFever.getButton().isButtonEnabled()) return;
         if (hasGoaled) return;
         enterFeverMode();
     }
 
     public void putCoinTrailToGoal() {
-        this.btnCoinTrail.gageStartFromEmpty(coinTrailGageDuration);
-        guideMessage.setMessage("ゴールコイン発動！ コインの道が作られていく！");
+        this.btnCoinTrail.gageStartFromEmpty(gageDuration_coinTrail);
+        guideMessage.setMessage("ゴールコイン 発動！ コインの道が作られていく！");
 
         final List<Pos> path = calcShortestPath(
                 this.player.getPos(), this.mapData.getGoalPos(),
@@ -464,6 +506,37 @@ public class MazePhase implements Phase {
                     coinPutSE.play();
                 }
             }.start();
+        }
+    }
+
+    public void collectCoinsAroundPlayer(int dist) {
+        this.btnCollectNeighborCoin.gageStartFromEmpty(gageDuration_collectCoins);
+
+        int collectedCoinCount = 0;
+
+        final int centerRow = player.getPosRow();
+        final int centerCol = player.getPosCol();
+        for (int y = centerRow - dist; y <= centerRow + dist; ++y) {
+            for (int x = centerCol - dist; x <= centerCol + dist; ++x) {
+                if (y < 0 || x < 0 || y >= mapData.getHeight() || x >= mapData.getWidth()) continue;
+                if (mapData.getItemType(x, y) != ItemType.COIN) continue;
+
+                coinGetAction(x, y, false);
+                ++collectedCoinCount;
+
+                new TaskScheduleTimer(30L * collectedCoinCount) {
+                    @Override
+                    public void task() {
+                        coinSE.play();
+                    }
+                }.start();
+            }
+        }
+
+        if (collectedCoinCount <= 0) {
+            guideMessage.setMessage("コインの杖 発動！ しかし周囲 2 マスにコインが無かった...");
+        } else {
+            guideMessage.setMessage("コインの杖 発動！ " + collectedCoinCount + " 枚のコインをゲットした！");
         }
     }
 
@@ -500,7 +573,7 @@ public class MazePhase implements Phase {
                 feverBGM.stop();
                 isFeverMode = false;
                 playerMoveDuration = playerNormalMoveDuration;
-                btnFever.gageStartFromEmpty(feverGageDuration);
+                btnFever.gageStartFromEmpty(gageDuration_fever);
 
                 new Transition() {
                     {
