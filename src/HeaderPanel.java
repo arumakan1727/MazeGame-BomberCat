@@ -88,7 +88,7 @@ public class HeaderPanel {
 
         gc.setTextBaseline(VPos.TOP);
         gc.fillText("Time:", col1X, middleY + 1);
-        gc.fillText(drawnElapsedTime + "", col2X, middleY + 1);
+        gc.fillText(formatTime(drawnElapsedTime) + "", col2X, middleY + 1);
     }
 
     public void addCenterButton(TimeGageImageViewButton button) {
@@ -181,5 +181,9 @@ public class HeaderPanel {
             btn.getButton().setLayoutY(this.y + (this.height - btn.getHeight()) / 2);
             widthSum += btn.getWidth();
         }
+    }
+
+    private static String formatTime(int sec) {
+        return String.format("%01dm %02ds", sec / 60, sec % 60);
     }
 }
