@@ -79,7 +79,7 @@ public class MazePhase implements Phase {
         this.mapView.setMapTopY(HEADER_PANEL_HEIGHT);
         {
             this.headerPanel = new HeaderPanel(0, 0, mapView.getMapWidth(), HEADER_PANEL_HEIGHT);
-            this.btnCoinTrail = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-coin-rod.png"), scene));
+            this.btnCoinTrail = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-coin-to-goal.png"), scene));
             this.btnFever = new TimeGageImageViewButton(new ImageViewButton(new Image("png/button-magic-circle.png"), scene));
             this.headerPanel.addCenterButton(this.btnCoinTrail);
             this.headerPanel.addCenterButton(this.btnFever);
@@ -134,7 +134,7 @@ public class MazePhase implements Phase {
             this.putCoinTrailToGoal();
         });
         this.btnCoinTrail.setOnGageFilled(btn -> {
-            guideMessage.setMessage("コインの杖 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
+            guideMessage.setMessage("コインの小道 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
         });
         this.btnFever.getButton().setOnMouseClicked(evt -> {
             this.enterFeverMode();
@@ -442,6 +442,7 @@ public class MazePhase implements Phase {
 
     public void putCoinTrailToGoal() {
         this.btnCoinTrail.gageStartFromEmpty(coinTrailGageDuration);
+        guideMessage.setMessage("ゴールコイン発動！ コインの道が作られていく！");
 
         final List<Pos> path = calcShortestPath(
                 this.player.getPos(), this.mapData.getGoalPos(),
@@ -450,9 +451,11 @@ public class MazePhase implements Phase {
 
         final AudioClip coinPutSE = new AudioClip(MapGame.getResourceAsString("sound/coin8.wav"));
 
-        int i = 0;
-        for (Pos pos : path) {
+        for (int i = 0; i < path.size(); i++) {
+            final Pos pos = path.get(i);
             if (mapData.getItemType(pos.col, pos.row) != ItemType.NONE) continue;
+            if (i == 0 || i == path.size() - 1) continue;
+
             new TaskScheduleTimer(i * 80L) {
                 @Override
                 public void task() {
@@ -461,7 +464,6 @@ public class MazePhase implements Phase {
                     coinPutSE.play();
                 }
             }.start();
-            ++i;
         }
     }
 
