@@ -87,8 +87,8 @@ public class MazePhase implements Phase {
         this.bombExecutor = new BombExecutor(mapView);
 
         {
-            this.normalBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/bgm_maoudamashii_8bit18.mp3")));
-            this.normalBGM.setVolume(0.3);
+            this.normalBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/digitalworld.mp3")));
+            this.normalBGM.setVolume(0.4);
             this.normalBGM.setCycleCount(AudioClip.INDEFINITE);
 
             this.feverBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/bgm-fever.mp3")));
