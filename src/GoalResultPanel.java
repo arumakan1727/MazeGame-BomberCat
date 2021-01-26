@@ -77,7 +77,7 @@ public class GoalResultPanel {
 
         gc.setFont(Font.font("sans-serif", FontWeight.BOLD, 24));
         gc.fillText("  Goal time:", COL1_LEFT_X, ROW1_BOTTOM_Y);
-        gc.fillText(this.goalTimeSec + " sec", COL2_LEFT_X, ROW1_BOTTOM_Y);
+        gc.fillText(formatTime(this.goalTimeSec), COL2_LEFT_X, ROW1_BOTTOM_Y);
 
         gc.setLineWidth(2);
         final int lineY = ROW1_BOTTOM_Y + 5;
@@ -124,5 +124,9 @@ public class GoalResultPanel {
 
     public ImageViewButton getBtnNewMap() {
         return btnNewMap;
+    }
+
+    private static String formatTime(int sec) {
+        return String.format("%01dm %02ds", sec / 60, sec % 60);
     }
 }

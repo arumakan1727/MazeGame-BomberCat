@@ -18,12 +18,13 @@ import java.util.function.Predicate;
 
 public class MazePhase implements Phase {
     private static final Duration playerNormalMoveDuration = Duration.millis(250);
-    private static final Duration playerFeverMoveDuration = Duration.millis(150);
+    private static final Duration playerFeverMoveDuration = Duration.millis(120);
     private static final long FEVER_KEEP_TIME_MILLI = 15 * 1000;
-    private static final Duration coinTrailGageDuration = Duration.seconds(10);
-    private static final Duration feverGageDuration = Duration.seconds(15);
+    private static final Duration coinTrailGageDuration = Duration.seconds(15);
+    private static final Duration feverGageDuration = Duration.seconds(20);
 
     private final MapGameScene scene;
+    private final Stopwatch goalStopwatch;
 
     private final MapData mapData;
     private final MapView mapView;
@@ -60,6 +61,7 @@ public class MazePhase implements Phase {
     public MazePhase(MapGameScene scene) {
         final int HEADER_PANEL_HEIGHT = 56;
         this.scene = scene;
+        this.goalStopwatch = new Stopwatch(Duration.millis(500));
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.mapView.setMapTopY(HEADER_PANEL_HEIGHT);
@@ -76,6 +78,7 @@ public class MazePhase implements Phase {
             this.btnFever.getButton().setOnMouseClicked(evt -> {
                 this.enterFeverMode();
             });
+            this.goalStopwatch.setTickHandler(elapsedTime -> headerPanel.setDrawnElapsedTime(((int) elapsedTime.toSeconds())));
         }
 
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
@@ -125,6 +128,7 @@ public class MazePhase implements Phase {
         this.guideMessage.setMessage("カギを すべて 拾って ゴールの 扉 を開けよう！");
         this.btnCoinTrail.gageStartFromEmpty(coinTrailGageDuration);
         this.btnFever.gageStartFromEmpty(feverGageDuration);
+        this.goalStopwatch.start();
     }
 
     @Override
@@ -314,6 +318,7 @@ public class MazePhase implements Phase {
     }
 
     public void goalAction() {
+        this.goalStopwatch.stop();
         this.isPlayerControllable = false;
         this.hasGoaled = true;
         this.normalBGM.stop();
@@ -327,7 +332,7 @@ public class MazePhase implements Phase {
         new TaskScheduleTimer(2000) {
             @Override
             public void task() {
-                goalResultPanel = new GoalResultPanel("GOAL!", 57, headerPanel.getDrawnScore(), scene);
+                goalResultPanel = new GoalResultPanel("GOAL!", ((int) goalStopwatch.getCurTime().toSeconds()), headerPanel.getDrawnScore(), scene);
                 goalResultPanel.getBtnNewMap().setOnMouseClicked(event -> createAndGotoNextMaze());
 
                 final int fromY = -1 * goalResultPanel.getHeight();
