@@ -51,7 +51,7 @@ public class ImageFrameAnimation extends MyTimer {
         this.animationDirection = animationDirection;
 
         if (this.animationDirection == Direction.REVERSE) {
-            this.currentFrameIndex = this.imageFrames.countFrame() - 1;
+            this.currentFrameIndex = this.imageFrames.getFrameCount() - 1;
             isPlus = false;
         } else {
             this.currentFrameIndex = 0;
@@ -81,7 +81,7 @@ public class ImageFrameAnimation extends MyTimer {
 
     @Override
     public void update(long elapsedTimeNano) {
-        if (!this.isInfinite && elapsedTimeNano > durationNano * this.imageFrames.countFrame()) {
+        if (!this.isInfinite && elapsedTimeNano > durationNano * this.imageFrames.getFrameCount()) {
             this.setDead(true);
             return;
         }
@@ -100,7 +100,7 @@ public class ImageFrameAnimation extends MyTimer {
             this.currentFrameIndex--;
         }
 
-        final int n = this.imageFrames.countFrame();
+        final int n = this.imageFrames.getFrameCount();
         // frameIndex が終端または始端を超えたときの処理
         if (this.currentFrameIndex >= n) {
             if (this.animationDirection == Direction.ALTERNATE) {

@@ -13,8 +13,8 @@ public class HeaderPanel {
     private int y;
     private int width;
     private int height;
-    private int drawnScore = 0;
-    private int drawnElapsedTime = 0;
+    private int score = 0;
+    private int elapsedTime = 0;
     private int gotKeyCount = 0;
     private int maxKeyCount = 3;
     private final List<TimeGageImageViewButton> centerButtons;
@@ -84,11 +84,11 @@ public class HeaderPanel {
 
         gc.setTextBaseline(VPos.BOTTOM);
         gc.fillText("Score:", col1X, middleY - 1);
-        gc.fillText(drawnScore + "", col2X, middleY - 1);
+        gc.fillText(score + "", col2X, middleY - 1);
 
         gc.setTextBaseline(VPos.TOP);
         gc.fillText("Time:", col1X, middleY + 1);
-        gc.fillText(formatTime(drawnElapsedTime) + "", col2X, middleY + 1);
+        gc.fillText(formatTime(elapsedTime) + "", col2X, middleY + 1);
     }
 
     public void addCenterButton(TimeGageImageViewButton button) {
@@ -130,24 +130,24 @@ public class HeaderPanel {
         this.height = height;
     }
 
-    public int getDrawnScore() {
-        return drawnScore;
+    public int getScore() {
+        return score;
     }
 
-    public void setDrawnScore(int drawnScore) {
-        this.drawnScore = drawnScore;
+    public void setScore(int score) {
+        this.score = score;
     }
 
-    public void addDrawnScore(int addScore) {
-        this.drawnScore += addScore;
+    public void incrementScore(int incValue) {
+        this.score += incValue;
     }
 
-    public int getDrawnElapsedTime() {
-        return drawnElapsedTime;
+    public int getElapsedTime() {
+        return elapsedTime;
     }
 
-    public void setDrawnElapsedTime(int drawnElapsedTime) {
-        this.drawnElapsedTime = drawnElapsedTime;
+    public void setElapsedTime(int elapsedTime) {
+        this.elapsedTime = elapsedTime;
     }
 
     public int getGotKeyCount() {

@@ -1,12 +1,17 @@
 import javafx.scene.image.Image;
 import javafx.scene.media.AudioClip;
 
-public class GoldBomb extends NormalBomb {
+public final class GoldBomb extends AbstractBomb {
     private static final SpriteSheet bombSpriteSheet = new SpriteSheet(new Image("png/gold-bomb-spritesheet.png"), 4, 1);
     private static final AudioClip explosionSE = new AudioClip(MapGame.getResourceAsString("sound/explosion.wav"));
 
     public GoldBomb(int col, int row) {
         super(col, row, GoldBomb.bombSpriteSheet);
+    }
+
+    @Override
+    public void playExplosionSE() {
+        GoldBomb.explosionSE.play();
     }
 
     @Override
@@ -25,11 +30,6 @@ public class GoldBomb extends NormalBomb {
                 }
             }
         }
-    }
-
-    @Override
-    public void playExplosionSE() {
-        explosionSE.play();
     }
 
     private static void registerExplosion(

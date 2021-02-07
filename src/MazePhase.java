@@ -33,8 +33,8 @@ public class MazePhase implements Phase {
     private static final Duration playerNormalMoveDuration = Duration.millis(250);
     private static final Duration playerFeverMoveDuration = Duration.millis(120);
     private static final long FEVER_KEEP_TIME_MILLI = 15 * 1000;
-    private static final Duration gageDuration_coinTrail = Duration.seconds(15);
-    private static final Duration gageDuration_fever = Duration.seconds(20);
+    private static final Duration gageDuration_coinTrail = Duration.seconds(10);
+    private static final Duration gageDuration_fever = Duration.seconds(15);
     private static final Duration gageDuration_collectCoins = Duration.seconds(5);
 
     private final MapGameScene scene;
@@ -73,12 +73,21 @@ public class MazePhase implements Phase {
     private final TimeGageImageViewButton btnCollectNeighborCoin;
     private final TimeGageImageViewButton btnFever;
 
+    /**
+     * コンストラクタ。
+     * 迷路ゲームの実行に必要なオブジェクトを構築する。
+     * ゲームはまだ始めない。setup() 関数を呼び出すことでゲームが始まる。
+     *
+     * @param scene ゲームを描画する対象のシーン
+     */
     public MazePhase(MapGameScene scene) {
         this.scene = scene;
         this.goalStopwatch = new Stopwatch(Duration.millis(500));
         this.mapData = new MapData(21, 15);
         this.mapView = new MapView(mapData, 32, createDefaultMapSkin());
         this.mapView.setMapTopY(HEADER_PANEL_HEIGHT);
+
+        // 上部のパネルの設定
         {
             this.headerPanel = new HeaderPanel(0, 0, mapView.getMapWidth(), HEADER_PANEL_HEIGHT);
 
@@ -89,14 +98,20 @@ public class MazePhase implements Phase {
             this.headerPanel.addCenterButton(this.btnCoinTrail);
             this.headerPanel.addCenterButton(this.btnCollectNeighborCoin);
             this.headerPanel.addCenterButton(this.btnFever);
-            this.goalStopwatch.setTickHandler(elapsedTime -> headerPanel.setDrawnElapsedTime(((int) elapsedTime.toSeconds())));
+            this.goalStopwatch.setTickHandler(elapsedTime -> headerPanel.setElapsedTime(((int) elapsedTime.toSeconds())));
         }
 
+        // プレイヤー
         this.player = new MoveChara(mapData.getPlayerStartX(), mapData.getPlayerStartY(), mapData, mapView);
         this.player.setOnMoveHandler(this::onPlayerMoved);
+
+        // 暗闇をくり抜く穴
         this.blindHollowAtPlayer = new Circle(mapView.getCellSize() * 3);
+
+        // 爆弾・爆発を管理するもの
         this.bombExecutor = new BombExecutor(mapView);
 
+        // BGM, SE の設定
         {
             this.normalBGM = new MediaPlayer(new Media(MapGame.getResourceAsString("sound/digitalworld.mp3")));
             this.normalBGM.setVolume(0.4);
@@ -111,19 +126,29 @@ public class MazePhase implements Phase {
             this.goalSE = new AudioClip(MapGame.getResourceAsString("sound/goal.wav"));
         }
 
+        // ガイドメッセージの設定
         final Font pixelFont = Font.loadFont(MapGame.getResourceAsString("font/PixelMplus12-Regular.ttf"), 16);
         this.guideMessage = new MessageArea(0, this.mapView.getMapBottomY(), this.mapView.getMapWidth(), GUIDE_MESSAGE_AREA_HEIGHT, pixelFont);
 
+        // キーが押されているなら 対応する列挙体の ord が true になる配列
         this.isKeyPushed = new boolean[KeyCode.values().length];
 
+        // トップレイヤーに描画されるオブジェクトを管理するもの
         this.topLayerDrawable = new DrawableExecutor();
     }
 
+    /**
+     * keyCode のキーが押されているなら true
+     */
     public boolean isKeyPushed(KeyCode keyCode) {
         return this.isKeyPushed[keyCode.ordinal()];
     }
 
-    public void hollowAtPlayer() {
+
+    /**
+     * 暗闇をくり抜く穴の中心座標をプレイヤーの中心座標に追従させる
+     */
+    public void updateHollowPosition() {
         final int sHalf = mapView.getCellSize() / 2;
         this.blindHollowAtPlayer.setCenterX(player.getDrawnX() + sHalf);
         this.blindHollowAtPlayer.setCenterY(player.getDrawnY() + sHalf);
@@ -133,9 +158,11 @@ public class MazePhase implements Phase {
     public void setup() {
         this.scene.setOnKeyPressed(this::keyPressedAction);
         this.scene.setOnKeyReleased(this::keyReleasedAction);
-        scene.getOtherComponents().getChildren().addAll(this.btnCoinTrail.getButton(), this.btnCollectNeighborCoin.getButton(), this.btnFever.getButton());
-        this.normalBGM.play();
 
+        // シーンにボタンを追加
+        scene.getOtherComponents().getChildren().addAll(this.btnCoinTrail.getButton(), this.btnCollectNeighborCoin.getButton(), this.btnFever.getButton());
+
+        // コインの小道のボタン
         this.btnCoinTrail.getButton().setOnMouseClicked(evt -> {
             this.putCoinTrailToGoal();
         });
@@ -143,6 +170,7 @@ public class MazePhase implements Phase {
             guideMessage.setMessage("コインの小道 が使えるようになった！ [1]キーを押すとコインがゴールへ導いてくれる！");
         });
 
+        // コインの杖のボタン
         this.btnCollectNeighborCoin.getButton().setOnMouseClicked(evt -> {
             this.collectCoinsAroundPlayer(2);
         });
@@ -150,6 +178,7 @@ public class MazePhase implements Phase {
             guideMessage.setMessage("コインの杖 が使えるようになった！ [2]キー を押して周囲 2 マスのコインを一気にゲット！");
         });
 
+        // フィーバースターのボタン
         this.btnFever.getButton().setOnMouseClicked(evt -> {
             this.enterFeverMode();
         });
@@ -157,11 +186,18 @@ public class MazePhase implements Phase {
             guideMessage.setMessage("フィーバースター が使えるようになった！ [3]キー を押して フィーバー だ！");
         });
 
+        // ガイドメッセージの設定
         this.guideMessage.setMessage("カギをすべて拾ってゴールの扉を開けよう！ スペースキーで爆弾を置けるぞ！");
 
+        // ゲージボタンのゲージ貯めを開始
         this.btnCoinTrail.gageStartFromEmpty(gageDuration_coinTrail);
         this.btnCollectNeighborCoin.gageStartFromEmpty(gageDuration_collectCoins);
         this.btnFever.gageStartFromEmpty(gageDuration_fever);
+
+        // BGMの再生
+        this.normalBGM.play();
+
+        // ゴールまでの時間計測開始
         this.goalStopwatch.start();
     }
 
@@ -175,17 +211,17 @@ public class MazePhase implements Phase {
     @Override
     public void update(long now) {
         this.bombExecutor.update(mapData);
-        this.hollowAtPlayer();
+        this.updateHollowPosition();
 
         if (isPlayerControllable) {
             if (isKeyPushed(KeyCode.H) || isKeyPushed(KeyCode.LEFT)) {
-                leftButtonAction();
+                moveLeftAction();
             } else if (isKeyPushed(KeyCode.J) || isKeyPushed(KeyCode.DOWN)) {
-                downButtonAction();
+                moveDownAction();
             } else if (isKeyPushed(KeyCode.K) || isKeyPushed(KeyCode.UP)) {
-                upButtonAction();
+                moveUpAction();
             } else if (isKeyPushed(KeyCode.L) || isKeyPushed(KeyCode.RIGHT)) {
-                rightButtonAction();
+                moveRightAction();
             }
         }
     }
@@ -194,6 +230,9 @@ public class MazePhase implements Phase {
     public void draw(GraphicsContext gc) {
         gc.save();
         {
+            // 暗闇が有効 かつ 暗闇の半径が画面幅よりも小さければ、暗闇を描画する
+            // まず全て黒く塗りつぶした後に、プレイヤー周囲の正円くり抜き でクリッピングする。
+            // クリッピングするとクリッピングされた領域のみが描画される。
             if (this.isBlindEnabled && this.blindHollowAtPlayer.getRadius() < this.mapView.getMapWidth()) {
                 gc.setFill(Color.BLACK);
                 gc.fillRect(mapView.getMapLeftX(), mapView.getMapTopY(), mapView.getMapWidth(), mapView.getMapHeight());
@@ -214,6 +253,9 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * 円領域群 (holes) のみを描画するよう gc を設定する。
+     */
     private void clipHoles(GraphicsContext gc, Circle... holes) {
         gc.beginPath();
         for (Circle hole : holes) {
@@ -227,6 +269,9 @@ public class MazePhase implements Phase {
         gc.clip();
     }
 
+    /**
+     * セルタイプ からデフォルトの セルの画像 を求める写像を生成して返す。
+     */
     private static MapSkin createDefaultMapSkin() {
         EnumMap<CellType, String> cellImagePaths = new EnumMap<>(CellType.class);
         cellImagePaths.put(CellType.SPACE, "png/SPACE.png");
@@ -235,14 +280,21 @@ public class MazePhase implements Phase {
         return new MapSkin(cellImagePaths);
     }
 
+    /**
+     * 任意のキーが離されたときの処理
+     */
     public void keyReleasedAction(KeyEvent event) {
         this.isKeyPushed[event.getCode().ordinal()] = false;
     }
 
-    // Get users key actions
+    /**
+     * 任意のキーが押されたときの処理
+     */
     public void keyPressedAction(KeyEvent event) {
+        // フラグ配列の更新
         this.isKeyPushed[event.getCode().ordinal()] = true;
 
+        // 以下、プレイヤーの操作 (アイテムの使用も含める)
         if (!isPlayerControllable) {
             return;
         }
@@ -252,7 +304,8 @@ public class MazePhase implements Phase {
                 spaceButtonAction();
                 break;
 
-            case DIGIT1:
+            case DIGIT1: // 1 キー
+                // シフトキーが同時に押されていれば強制でコインの小道発動, そうでなければゲージボタンの状態などをチェックして発動
                 if (isKeyPushed(KeyCode.SHIFT)) {
                     putCoinTrailToGoal();
                 } else {
@@ -260,7 +313,8 @@ public class MazePhase implements Phase {
                 }
                 break;
 
-            case DIGIT2:
+            case DIGIT2: // 2 キー
+                // シフトキーが同時に押されていれば強制でコインの杖発動, そうでなければゲージボタンの状態などをチェックして発動
                 if (isKeyPushed(KeyCode.SHIFT)) {
                     collectCoinsAroundPlayer(2);
                 } else {
@@ -268,32 +322,29 @@ public class MazePhase implements Phase {
                 }
                 break;
 
-            case DIGIT3:
+            case DIGIT3: // 3 キー
+                // シフトキーが同時に押されていれば強制でフィーバーモード発動, そうでなければゲージボタンの状態などをチェックして発動
                 if (isKeyPushed(KeyCode.SHIFT)) {
-                    this.enterFeverMode();
+                    enterFeverMode();
                 } else {
                     requireEnterFeverMode();
                 }
                 break;
-            case ESCAPE:
+
+            case ESCAPE: // デバッグ用。暗闇の有効/無効をトグルする。
                 this.isBlindEnabled = !this.isBlindEnabled;
                 break;
-            case F1:
+
+            case F1: // デバッグ用。強制的にゴールしたことにする。
                 this.goalAction();
         }
     }
 
-    public void itemGetAction(int col, int row) {
-        final ItemType itemType = this.mapData.getItemType(col, row);
-
-        if (itemType == ItemType.COIN) {
-            this.coinGetAction(col, row, true);
-        } else if (itemType == ItemType.KEY) {
-            this.keyGetAction(col, row, true);
-        }
-    }
-
-    private double getFeverBonusRate() {
+    /**
+     * スコアを取得したときに乗算する値。
+     * フィーバーモードなら x1.5倍, そうでなければ 1.0 倍
+     */
+    private double getScoreCoefficient() {
         if (isFeverMode) {
             return 1.5;
         } else {
@@ -301,11 +352,40 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * 任意のアイテムを取得したときにこのメソッドを呼び出す必要がある。
+     *
+     * @param col 取得したアイテムの列番号
+     * @param row 取得したアイテムの行番号
+     */
+    public void itemGetAction(int col, int row) {
+        final boolean shouldPlaySE = true;
+
+        switch (this.mapData.getItemType(col, row)) {
+            case COIN:
+                coinGetAction(col, row, shouldPlaySE);
+                break;
+            case KEY:
+                keyGetAction(col, row, shouldPlaySE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * コインを取得したときに呼び出す。
+     * マップの更新、スコアの更新、スコアテキストのエフェクトの登録を行う。
+     *
+     * @param col    コインの列番号
+     * @param row    コインの行番号
+     * @param playSE true なら効果音を鳴らす
+     */
     private void coinGetAction(int col, int row, boolean playSE) {
         this.mapData.setItemType(col, row, ItemType.NONE);
 
-        final int score = (int) (ItemType.COIN.getScore() * getFeverBonusRate());
-        this.headerPanel.addDrawnScore(score);
+        final int score = (int) (ItemType.COIN.getScore() * getScoreCoefficient());
+        this.headerPanel.incrementScore(score);
 
         registerScoreTextFloatAnimation(score,
                 mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
@@ -316,6 +396,14 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * キーを取得したときに呼び出す。
+     * マップの更新、スコアの更新、スコアテキストのエフェクトの登録、ガイドメッセージの更新を行う。
+     *
+     * @param col    キーの列番号
+     * @param row    キーの行番号
+     * @param playSE true なら効果音を鳴らす
+     */
     private void keyGetAction(int col, int row, boolean playSE) {
         this.mapData.setItemType(col, row, ItemType.NONE);
 
@@ -329,8 +417,8 @@ public class MazePhase implements Phase {
             this.guideMessage.setMessage("カギを拾った！ のこり " + n + " つ！");
         }
 
-        final int score = (int) (ItemType.KEY.getScore() * getFeverBonusRate());
-        this.headerPanel.addDrawnScore(score);
+        final int score = (int) (ItemType.KEY.getScore() * getScoreCoefficient());
+        this.headerPanel.incrementScore(score);
 
         registerScoreTextFloatAnimation(score,
                 mapView.getCellDrawnX(col), mapView.getCellDrawnY(row),
@@ -341,6 +429,10 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * フェードアウトしながら上昇するスコアテキストのエフェクトを登録する。
+     * エフェクトは引数の drawableExecutor に登録される。
+     */
     private static void registerScoreTextFloatAnimation(int score, int x, int y, DrawableExecutor drawableExecutor, boolean isFeverMode) {
         drawableExecutor.registerAndPlay(new TextFloatUpAnimation(
                 "+" + score,
@@ -353,6 +445,10 @@ public class MazePhase implements Phase {
         ));
     }
 
+    /**
+     * プレイヤーのマス位置が変化した直後に呼び出される処理。
+     * (マス位置であり、描画座標ではない)
+     */
     private void onPlayerMoved(MoveChara chara) {
         final int playerCol = player.getPosCol();
         final int playerRow = player.getPosRow();
@@ -368,6 +464,10 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * ゴール処理を行う。
+     * 時間計測の停止やBGMの停止、アニメーションの停止、ゴールパネルの登場処理などを行う。
+     */
     public void goalAction() {
         this.goalStopwatch.stop();
         this.isPlayerControllable = false;
@@ -386,7 +486,7 @@ public class MazePhase implements Phase {
         new TaskScheduleTimer(2000) {
             @Override
             public void task() {
-                goalResultPanel = new GoalResultPanel("GOAL!", ((int) goalStopwatch.getCurTime().toSeconds()), headerPanel.getDrawnScore(), scene);
+                goalResultPanel = new GoalResultPanel("GOAL!", ((int) goalStopwatch.getCurTime().toSeconds()), headerPanel.getScore(), scene);
                 goalResultPanel.getBtnNewMap().setOnMouseClicked(event -> createAndGotoNextMaze());
                 goalResultPanel.getBtnToTitle().setOnMouseClicked(event -> {
                     final Phase nextPhase = new TitlePhase(scene);
@@ -415,52 +515,55 @@ public class MazePhase implements Phase {
     }
 
     /**
-     * TODO 必須3 次のマップへ遷移
+     * 次のマップへ遷移する
      */
     public void createAndGotoNextMaze() {
         Phase nextPhase = new MazePhase(this.scene);
         this.scene.changePhase(nextPhase);
     }
 
-    // Operations for going the cat down
-    public void upButtonAction() {
+    // Operations for going the cat up
+    public void moveUpAction() {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_UP);
         player.moveBy(0, -1, playerMoveDuration);
     }
 
     // Operations for going the cat down
-    public void downButtonAction() {
+    public void moveDownAction() {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_DOWN);
         player.moveBy(0, 1, playerMoveDuration);
     }
 
     // Operations for going the cat right
-    public void leftButtonAction() {
+    public void moveLeftAction() {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_LEFT);
         player.moveBy(-1, 0, playerMoveDuration);
     }
 
     // Operations for going the cat right
-    public void rightButtonAction() {
+    public void moveRightAction() {
         if (player.getMoveTransitionStatus() == Animation.Status.RUNNING) return;
         player.setCharaDirection(MoveChara.TYPE_RIGHT);
         player.moveBy(1, 0, playerMoveDuration);
     }
 
+    /**
+     * スペースキーが押されたときの処理。ボムを設置する。
+     */
     public void spaceButtonAction() {
         if (bombExecutor.isExistsBombAt(player.getPosCol(), player.getPosRow())) {
             return;
         }
 
         if (this.isFeverMode) {
-            if (bombExecutor.countBomb() >= 5) return;
-            bombExecutor.register(new GoldBomb(player.getPosCol(), player.getPosRow()));
+            if (bombExecutor.countBombByClass(GoldBomb.class) >= 5) return;
+            bombExecutor.registerAndStartCountDown(new GoldBomb(player.getPosCol(), player.getPosRow()));
         } else {
-            if (bombExecutor.countBomb() >= 3) return;
-            bombExecutor.register(new NormalBomb(player.getPosCol(), player.getPosRow()));
+            if (bombExecutor.countBombByClass(NormalBomb.class) >= 3) return;
+            bombExecutor.registerAndStartCountDown(new NormalBomb(player.getPosCol(), player.getPosRow()));
         }
     }
 
@@ -482,6 +585,9 @@ public class MazePhase implements Phase {
         enterFeverMode();
     }
 
+    /**
+    * コインの小道を発動する。
+    */
     public void putCoinTrailToGoal() {
         this.btnCoinTrail.gageStartFromEmpty(gageDuration_coinTrail);
         guideMessage.setMessage("コインの小道 発動！ コインの道が作られていく！");
@@ -509,6 +615,13 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * コインの杖を発動する。
+     * プレイヤーのマスを (px, py) として、
+     * (x, y) s.t. (px - dist <= x <= dx + dist) && (py - dist <= y <= py + dist)
+     * であるようなマス (x, y) にあるコイン全てを取得する。
+     * 効果音も鳴らす。
+     */
     public void collectCoinsAroundPlayer(int dist) {
         this.btnCollectNeighborCoin.gageStartFromEmpty(gageDuration_collectCoins);
 
@@ -540,6 +653,10 @@ public class MazePhase implements Phase {
         }
     }
 
+    /**
+     * フィーバースターを発動する。
+     * FEVER_KEEP_TIME_MILLI ミリ秒後にフィーバーモードは解除されて通常モードになる。
+     */
     public void enterFeverMode() {
         if (this.isFeverMode) return;
         this.btnFever.setGage(0.0);

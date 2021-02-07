@@ -13,7 +13,7 @@ public class ImageArray implements ImageFrames {
     }
 
     @Override
-    public int countFrame() {
+    public int getFrameCount() {
         return this.images.length;
     }
 

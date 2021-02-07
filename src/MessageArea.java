@@ -4,13 +4,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 
+// ガイドメッセージ用クラス
 public class MessageArea {
     private int x;
     private int y;
     private int width;
     private int height;
     private String message;
-
     private Font font;
     private Paint messageColor;
     private Paint backColor;
