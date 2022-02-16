@@ -101,3 +101,18 @@ JFX_LIB を指定しない場合は、デフォルト値として `/usr/share/op
 make JFX_LIB=~/.local/lib/javafx-sdk-11.0.2/lib run
 ```
 
+
+## 謝辞・素材提供
+下記サイトのフリー画像素材を使わせていただきました。
+
+- https://opengameart.org
+- https://www.flaticon.com
+- https://www.civillink.net
+
+音源素材は下記サイトのものを使わせていただきました。
+
+- https://opengameart.org
+- https://www.music-note.jp
+
+この場を借りてお礼申し上げます。  
+I would like to take this opportunity to thank you.
